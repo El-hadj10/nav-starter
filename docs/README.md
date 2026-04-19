@@ -10,7 +10,7 @@ Ce dossier centralise la documentation du projet nav-starter.
 
 ## Resume du projet
 
-nav-starter est une application front-end React, TypeScript et Vite orientee mobile. L'interface actuelle propose un rendu type application de navigation avec onglets, recherche, changement de mode de trajet, favoris persistants, historique recent, installation PWA et support GitHub Pages.
+nav-starter est une application front-end React, TypeScript et Vite orientee mobile. L'interface actuelle propose un rendu type application de navigation avec onglets, recherche, changement de mode de trajet, favoris persistants, historique recent, geolocalisation navigateur, installation PWA et support GitHub Pages.
 
 ## Fonctionnalites actuelles
 
@@ -18,6 +18,7 @@ nav-starter est une application front-end React, TypeScript et Vite orientee mob
 - Selection d'un trajet actif avec mise a jour du resume et de la timeline.
 - Changement de mode de trajet entre voiture, transport et marche.
 - Sauvegarde locale des favoris et des destinations recentes via localStorage.
+- Geolocalisation navigateur pour recalculer distance et ETA depuis la position courante.
 - Installation mobile via PWA.
 
 ## Points techniques

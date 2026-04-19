@@ -15,6 +15,11 @@ type RouteStep = {
   baseMinuteOffset: number
 }
 
+type Coordinates = {
+  latitude: number
+  longitude: number
+}
+
 type Destination = {
   id: string
   name: string
@@ -26,6 +31,7 @@ type Destination = {
   parking: string
   etaByMode: Record<TravelMode, number>
   offlinePack: string
+  coordinates: Coordinates
   steps: RouteStep[]
 }
 
@@ -54,6 +60,7 @@ const destinations: Destination[] = [
     parking: '14 spots in Parking B',
     etaByMode: { drive: 18, transit: 27, walk: 82 },
     offlinePack: 'Lagoon + Marina',
+    coordinates: { latitude: 5.2905, longitude: -3.9876 },
     steps: [
       {
         title: 'Leave Plateau',
@@ -83,6 +90,7 @@ const destinations: Destination[] = [
     parking: 'Street parking, average wait 6 min',
     etaByMode: { drive: 21, transit: 16, walk: 54 },
     offlinePack: 'Port Core',
+    coordinates: { latitude: 5.3162, longitude: -4.0154 },
     steps: [
       {
         title: 'Take Riverside Boulevard',
@@ -112,6 +120,7 @@ const destinations: Destination[] = [
     parking: 'Scenic lot currently at 60% capacity',
     etaByMode: { drive: 29, transit: 42, walk: 120 },
     offlinePack: 'Cliffside Trails',
+    coordinates: { latitude: 5.3575, longitude: -3.9331 },
     steps: [
       {
         title: 'Exit city ring',
@@ -141,6 +150,7 @@ const destinations: Destination[] = [
     parking: 'Drop-off only, gate C recommended',
     etaByMode: { drive: 36, transit: 31, walk: 180 },
     offlinePack: 'Airport Ring',
+    coordinates: { latitude: 5.2614, longitude: -3.9263 },
     steps: [
       {
         title: 'Join northern expressway',
@@ -202,6 +212,57 @@ function formatClock(offsetInMinutes: number) {
   })
 }
 
+function toRadians(value: number) {
+  return (value * Math.PI) / 180
+}
+
+function computeDistanceKm(origin: Coordinates, destination: Coordinates) {
+  const earthRadiusKm = 6371
+  const latitudeDelta = toRadians(destination.latitude - origin.latitude)
+  const longitudeDelta = toRadians(destination.longitude - origin.longitude)
+  const startLatitude = toRadians(origin.latitude)
+  const endLatitude = toRadians(destination.latitude)
+
+  const haversineValue =
+    Math.sin(latitudeDelta / 2) ** 2 +
+    Math.cos(startLatitude) *
+      Math.cos(endLatitude) *
+      Math.sin(longitudeDelta / 2) ** 2
+
+  const centralAngle = 2 * Math.atan2(Math.sqrt(haversineValue), Math.sqrt(1 - haversineValue))
+
+  return earthRadiusKm * centralAngle
+}
+
+function computeLiveEta(distanceKm: number, mode: TravelMode, traffic: Destination['traffic']) {
+  const trafficPenalty = traffic === 'Heavy' ? 1.28 : traffic === 'Moderate' ? 1.12 : 1
+
+  if (mode === 'walk') {
+    return Math.max(3, Math.round((distanceKm / 4.8) * 60))
+  }
+
+  if (mode === 'transit') {
+    return Math.max(5, Math.round((distanceKm / 26) * 60 + 6))
+  }
+
+  return Math.max(4, Math.round((distanceKm / 34) * 60 * trafficPenalty + 2))
+}
+
+function formatAreaLabel(origin: Coordinates) {
+  const nearestDestination = destinations.reduce((closest, destination) => {
+    if (!closest) {
+      return destination
+    }
+
+    const currentDistance = computeDistanceKm(origin, destination.coordinates)
+    const closestDistance = computeDistanceKm(origin, closest.coordinates)
+
+    return currentDistance < closestDistance ? destination : closest
+  }, destinations[0])
+
+  return `Near ${nearestDestination.area}`
+}
+
 function App() {
   const [activeTab, setActiveTab] = useState<TabId>('discover')
   const [travelMode, setTravelMode] = useState<TravelMode>('drive')
@@ -209,6 +270,7 @@ function App() {
   const [selectedDestinationId, setSelectedDestinationId] = useState('marina-hub')
   const [locationLabel, setLocationLabel] = useState('Lagoon District')
   const [locationState, setLocationState] = useState('GPS strong')
+  const [currentCoordinates, setCurrentCoordinates] = useState<Coordinates | null>(null)
   const [installPrompt, setInstallPrompt] =
     useState<BeforeInstallPromptEvent | null>(null)
   const [isInstalled, setIsInstalled] = useState(false)
@@ -219,7 +281,26 @@ function App() {
     readStoredIds(historyStorageKey, ['marina-hub']),
   )
 
-  const filteredDestinations = destinations.filter((destination) => {
+  const liveDestinations = destinations.map((destination) => {
+    if (!currentCoordinates) {
+      return destination
+    }
+
+    const directDistanceKm = computeDistanceKm(currentCoordinates, destination.coordinates)
+    const routedDistanceKm = Math.max(1, Math.round(directDistanceKm * 1.18 * 10) / 10)
+
+    return {
+      ...destination,
+      distanceKm: routedDistanceKm,
+      etaByMode: {
+        drive: computeLiveEta(routedDistanceKm, 'drive', destination.traffic),
+        transit: computeLiveEta(routedDistanceKm, 'transit', destination.traffic),
+        walk: computeLiveEta(routedDistanceKm, 'walk', destination.traffic),
+      },
+    }
+  })
+
+  const filteredDestinations = liveDestinations.filter((destination) => {
     const normalizedQuery = query.trim().toLowerCase()
 
     if (!normalizedQuery) {
@@ -233,15 +314,15 @@ function App() {
   })
 
   const selectedDestination =
-    destinations.find((destination) => destination.id === selectedDestinationId) ??
-    destinations[0]
+    liveDestinations.find((destination) => destination.id === selectedDestinationId) ??
+    liveDestinations[0]
 
-  const favoriteDestinations = destinations.filter((destination) =>
+  const favoriteDestinations = liveDestinations.filter((destination) =>
     favoriteIds.includes(destination.id),
   )
 
   const recentDestinations = recentIds
-    .map((id) => destinations.find((destination) => destination.id === id))
+    .map((id) => liveDestinations.find((destination) => destination.id === id))
     .filter((destination): destination is Destination => Boolean(destination))
 
   const activeEta = selectedDestination.etaByMode[travelMode]
@@ -309,12 +390,39 @@ function App() {
   }
 
   const handleLocate = () => {
-    setLocationState('Refreshing GPS')
+    if (!('geolocation' in navigator)) {
+      setLocationState('Geolocation unavailable')
+      return
+    }
 
-    window.setTimeout(() => {
-      setLocationLabel(selectedDestination.area)
-      setLocationState('Position locked')
-    }, 450)
+    setLocationState('Refreshing GPS')
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const nextCoordinates = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        }
+
+        setCurrentCoordinates(nextCoordinates)
+        setLocationLabel(formatAreaLabel(nextCoordinates))
+        setLocationState('Position locked')
+      },
+      (error) => {
+        const errorLabel =
+          error.code === error.PERMISSION_DENIED
+            ? 'Location denied'
+            : error.code === error.TIMEOUT
+              ? 'Location timeout'
+              : 'Location unavailable'
+
+        setLocationState(errorLabel)
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 300000,
+        timeout: 10000,
+      },
+    )
   }
 
   const handleSelectDestination = (destinationId: string) => {
@@ -324,10 +432,9 @@ function App() {
       return nextIds.slice(0, 4)
     })
     setActiveTab('discover')
-    const destination = destinations.find((entry) => entry.id === destinationId)
+    const destination = liveDestinations.find((entry) => entry.id === destinationId)
 
     if (destination) {
-      setLocationLabel(destination.area)
       setLocationState('Route updated')
     }
   }
@@ -610,7 +717,8 @@ function App() {
         <h1>nav-starter passe d’une demo visuelle a une base interactive exploitable.</h1>
         <p className="lead">
           Recherche de destinations, changement de mode de trajet, favoris persistants
-          et historique recent sont maintenant relies a un etat applicatif simple.
+          et historique recent sont maintenant relies a un etat applicatif simple,
+          avec geolocalisation navigateur pour recalculer les trajets.
         </p>
 
         <div className="install-banner">
@@ -647,7 +755,7 @@ function App() {
           <article className="summary-card">
             <p className="micro-label">Current route</p>
             <strong>{selectedDestination.name}</strong>
-            <span>Arrival around {arrivalTime} in {travelMode} mode.</span>
+            <span>Arrival around {arrivalTime} in {travelMode} mode from your current position.</span>
           </article>
         </div>
       </section>
@@ -690,6 +798,7 @@ function App() {
             <h2>{selectedDestination.name}</h2>
             <ul>
               <li>{selectedDestination.description}</li>
+              <li>Browser geolocation can refresh current position and recompute route metrics.</li>
               <li>{selectedDestination.parking}</li>
               <li>Offline pack: {selectedDestination.offlinePack}</li>
             </ul>
@@ -700,8 +809,8 @@ function App() {
             <h2>What to wire next</h2>
             <ol>
               <li>Connect this state to a real mapping or routing API.</li>
-              <li>Replace mock GPS with browser geolocation permissions.</li>
               <li>Add account sync for favorites and trip history.</li>
+              <li>Introduce live traffic or notification refresh.</li>
             </ol>
           </section>
 
