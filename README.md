@@ -1,6 +1,27 @@
+
 # nav-starter
 
-Starter front-end base sur React, TypeScript et Vite. Le projet contient maintenant une interface mobile de navigation installable avec recherche de destinations, modes de trajet, favoris persistants, historique recent, geolocalisation navigateur et integration de geocodage/routage public.
+
+Starter front-end basé sur React, TypeScript et Vite. Le projet contient maintenant :
+- Interface mobile de navigation installable (PWA)
+- Recherche de destinations, favoris persistants, historique récent
+- Géolocalisation navigateur
+- Intégration de géocodage/routage via backend proxy sécurisé (Mapbox)
+
+## Nouveautés architecture (avril 2026)
+
+- Fournisseur carto/routing : Mapbox (remplace Nominatim/OSRM)
+- Backend Node.js minimal (Express, proxy sécurisé, gestion clé API)
+- Frontend adapté pour requêter le backend (`/api/geocode`, `/api/route`)
+- Proxy Vite pour dev (`vite.config.proxy.ts`)
+- Lint/build validés
+
+Voir `backend/README.md` pour le déploiement backend.
+
+### Prochaines étapes possibles
+- Ajouter authentification backend
+- Centraliser la config multi-fournisseur
+- Synchronisation utilisateur (favoris, historique)
 
 ## Scripts
 
