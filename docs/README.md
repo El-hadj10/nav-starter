@@ -19,6 +19,8 @@ nav-starter est une application front-end React, TypeScript et Vite orientee mob
 - Changement de mode de trajet entre voiture, transport et marche.
 - Sauvegarde locale des favoris et des destinations recentes via localStorage.
 - Geolocalisation navigateur pour recalculer distance et ETA depuis la position courante.
+- Recherche distante via Nominatim OpenStreetMap.
+- Routage route et marche via OSRM, avec fallback estime si le service ne repond pas.
 - Installation mobile via PWA.
 
 ## Points techniques
