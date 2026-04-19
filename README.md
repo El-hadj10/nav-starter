@@ -1,6 +1,6 @@
 # nav-starter
 
-Starter front-end base sur React, TypeScript et Vite. Le projet contient maintenant une interface mobile de navigation installable avec recherche de destinations, modes de trajet, favoris persistants, historique recent et geolocalisation navigateur.
+Starter front-end base sur React, TypeScript et Vite. Le projet contient maintenant une interface mobile de navigation installable avec recherche de destinations, modes de trajet, favoris persistants, historique recent, geolocalisation navigateur et integration de geocodage/routage public.
 
 ## Scripts
 
@@ -37,11 +37,17 @@ npm run lint
 
 ## Structure utile
 
-- `src/App.tsx` contient l'experience mobile, la recherche, les favoris persistants, l'historique recent et la geolocalisation navigateur.
+- `src/App.tsx` contient l'experience mobile, la recherche, les favoris persistants, l'historique recent, la geolocalisation navigateur et les appels de geocodage/routage.
 - `src/App.css` contient la mise en page type application et les composants interactifs.
 - `public/manifest.webmanifest` decrit l'application installable.
 - `public/service-worker.js` gere le cache hors ligne de base.
 - `docs/README.md` centralise la documentation du projet.
+
+## Services utilises
+
+- Recherche distante : Nominatim OpenStreetMap.
+- Routage route et marche : OSRM demo server.
+- En cas d'echec reseau, l'application conserve un fallback local estime.
 
 ## Depot GitHub
 

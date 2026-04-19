@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 
 type TabId = 'discover' | 'journeys' | 'saved' | 'profile'
@@ -18,6 +18,22 @@ type RouteStep = {
 type Coordinates = {
   latitude: number
   longitude: number
+}
+
+type SearchResult = {
+  id: string
+  name: string
+  area: string
+  coordinates: Coordinates
+}
+
+type SearchStatus = 'idle' | 'loading' | 'ready' | 'error'
+
+type RouteMetrics = {
+  distanceKm: number
+  durationMinutes: number
+  steps: RouteStep[]
+  source: 'live' | 'estimated'
 }
 
 type Destination = {
@@ -173,6 +189,7 @@ const destinations: Destination[] = [
 
 const favoriteStorageKey = 'nav-starter.favorite-destinations'
 const historyStorageKey = 'nav-starter.recent-destinations'
+const defaultOrigin: Coordinates = { latitude: 5.3207, longitude: -4.0161 }
 
 function readStoredIds(storageKey: string, fallback: string[]) {
   if (typeof window === 'undefined') {
@@ -263,14 +280,72 @@ function formatAreaLabel(origin: Coordinates) {
   return `Near ${nearestDestination.area}`
 }
 
+function buildEstimatedSteps(destination: Destination): RouteStep[] {
+  return [
+    {
+      title: 'Leave current position',
+      detail: `Head toward ${destination.area} and stay on the fastest available corridor.`,
+      baseMinuteOffset: 0,
+    },
+    {
+      title: `Approach ${destination.name}`,
+      detail: destination.description,
+      baseMinuteOffset: Math.max(4, Math.round(destination.etaByMode.drive * 0.55)),
+    },
+    {
+      title: `Arrive at ${destination.name}`,
+      detail: destination.parking,
+      baseMinuteOffset: destination.etaByMode.drive,
+    },
+  ]
+}
+
+function buildSearchDestination(result: SearchResult): Destination {
+  return {
+    id: result.id,
+    name: result.name,
+    area: result.area,
+    tag: 'Search',
+    description: 'Destination resolved from live OpenStreetMap geocoding.',
+    distanceKm: 1,
+    traffic: 'Moderate',
+    parking: 'Live parking details unavailable for this result',
+    etaByMode: { drive: 8, transit: 12, walk: 20 },
+    offlinePack: 'Online route only',
+    coordinates: result.coordinates,
+    steps: [
+      {
+        title: 'Leave current position',
+        detail: `Start route guidance toward ${result.name}.`,
+        baseMinuteOffset: 0,
+      },
+      {
+        title: `Approach ${result.area}`,
+        detail: 'Follow the fastest corridor suggested by the routing service.',
+        baseMinuteOffset: 6,
+      },
+      {
+        title: `Arrive at ${result.name}`,
+        detail: 'Check local access and final approach on arrival.',
+        baseMinuteOffset: 12,
+      },
+    ],
+  }
+}
+
 function App() {
   const [activeTab, setActiveTab] = useState<TabId>('discover')
   const [travelMode, setTravelMode] = useState<TravelMode>('drive')
   const [query, setQuery] = useState('')
   const [selectedDestinationId, setSelectedDestinationId] = useState('marina-hub')
+  const [selectedSearchResult, setSelectedSearchResult] =
+    useState<SearchResult | null>(null)
   const [locationLabel, setLocationLabel] = useState('Lagoon District')
   const [locationState, setLocationState] = useState('GPS strong')
   const [currentCoordinates, setCurrentCoordinates] = useState<Coordinates | null>(null)
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
+  const [searchStatus, setSearchStatus] = useState<SearchStatus>('idle')
+  const [routeMetrics, setRouteMetrics] = useState<RouteMetrics | null>(null)
   const [installPrompt, setInstallPrompt] =
     useState<BeforeInstallPromptEvent | null>(null)
   const [isInstalled, setIsInstalled] = useState(false)
@@ -281,26 +356,28 @@ function App() {
     readStoredIds(historyStorageKey, ['marina-hub']),
   )
 
-  const liveDestinations = destinations.map((destination) => {
-    if (!currentCoordinates) {
-      return destination
-    }
+  const routeOrigin = currentCoordinates ?? defaultOrigin
 
-    const directDistanceKm = computeDistanceKm(currentCoordinates, destination.coordinates)
-    const routedDistanceKm = Math.max(1, Math.round(directDistanceKm * 1.18 * 10) / 10)
+  const liveDestinations = useMemo(
+    () =>
+      destinations.map((destination) => {
+        const directDistanceKm = computeDistanceKm(routeOrigin, destination.coordinates)
+        const routedDistanceKm = Math.max(1, Math.round(directDistanceKm * 1.18 * 10) / 10)
 
-    return {
-      ...destination,
-      distanceKm: routedDistanceKm,
-      etaByMode: {
-        drive: computeLiveEta(routedDistanceKm, 'drive', destination.traffic),
-        transit: computeLiveEta(routedDistanceKm, 'transit', destination.traffic),
-        walk: computeLiveEta(routedDistanceKm, 'walk', destination.traffic),
-      },
-    }
-  })
+        return {
+          ...destination,
+          distanceKm: routedDistanceKm,
+          etaByMode: {
+            drive: computeLiveEta(routedDistanceKm, 'drive', destination.traffic),
+            transit: computeLiveEta(routedDistanceKm, 'transit', destination.traffic),
+            walk: computeLiveEta(routedDistanceKm, 'walk', destination.traffic),
+          },
+        }
+      }),
+    [routeOrigin],
+  )
 
-  const filteredDestinations = liveDestinations.filter((destination) => {
+  const filteredDestinations = useMemo(() => liveDestinations.filter((destination) => {
     const normalizedQuery = query.trim().toLowerCase()
 
     if (!normalizedQuery) {
@@ -311,24 +388,201 @@ function App() {
       .join(' ')
       .toLowerCase()
       .includes(normalizedQuery)
-  })
+  }), [liveDestinations, query])
 
-  const selectedDestination =
-    liveDestinations.find((destination) => destination.id === selectedDestinationId) ??
-    liveDestinations[0]
-
-  const favoriteDestinations = liveDestinations.filter((destination) =>
-    favoriteIds.includes(destination.id),
+  const selectedDestination = useMemo(
+    () =>
+      selectedSearchResult
+        ? buildSearchDestination(selectedSearchResult)
+        : (liveDestinations.find((destination) => destination.id === selectedDestinationId) ??
+          liveDestinations[0]),
+    [liveDestinations, selectedDestinationId, selectedSearchResult],
   )
 
-  const recentDestinations = recentIds
-    .map((id) => liveDestinations.find((destination) => destination.id === id))
-    .filter((destination): destination is Destination => Boolean(destination))
+  const favoriteDestinations = useMemo(
+    () =>
+      liveDestinations.filter((destination) => favoriteIds.includes(destination.id)),
+    [favoriteIds, liveDestinations],
+  )
 
-  const activeEta = selectedDestination.etaByMode[travelMode]
+  const recentDestinations = useMemo(
+    () =>
+      recentIds
+        .map((id) => liveDestinations.find((destination) => destination.id === id))
+        .filter((destination): destination is Destination => Boolean(destination)),
+    [liveDestinations, recentIds],
+  )
+
+  const activeEta = routeMetrics?.durationMinutes ?? selectedDestination.etaByMode[travelMode]
   const arrivalTime = formatClock(activeEta)
   const totalTrips = recentIds.length + 9
   const savedMinutes = favoriteIds.length * 7 + recentIds.length * 4
+  const shouldSearchOnline = query.trim().length >= 3
+  const visibleSearchResults = shouldSearchOnline ? searchResults : []
+  const visibleSearchStatus = shouldSearchOnline ? searchStatus : 'idle'
+
+  useEffect(() => {
+    const normalizedQuery = query.trim()
+
+    if (normalizedQuery.length < 3) {
+      return
+    }
+
+    const controller = new AbortController()
+
+    const timeoutId = window.setTimeout(async () => {
+      setSearchStatus('loading')
+
+      try {
+        const endpoint = new URL('https://nominatim.openstreetmap.org/search')
+        endpoint.searchParams.set('format', 'jsonv2')
+        endpoint.searchParams.set('limit', '5')
+        endpoint.searchParams.set('addressdetails', '1')
+        endpoint.searchParams.set('q', normalizedQuery)
+
+        const response = await fetch(endpoint.toString(), {
+          signal: controller.signal,
+          headers: {
+            Accept: 'application/json',
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error('Geocoding failed')
+        }
+
+        const payload = (await response.json()) as Array<{
+          place_id: number
+          display_name: string
+          lat: string
+          lon: string
+          address?: Record<string, string>
+        }>
+
+        const nextResults = payload.map((entry) => ({
+          id: `search-${entry.place_id}`,
+          name: entry.address?.amenity || entry.address?.building || entry.display_name.split(',')[0],
+          area:
+            entry.address?.suburb ||
+            entry.address?.city ||
+            entry.address?.town ||
+            entry.address?.county ||
+            'OpenStreetMap result',
+          coordinates: {
+            latitude: Number(entry.lat),
+            longitude: Number(entry.lon),
+          },
+        }))
+
+        setSearchResults(nextResults)
+        setSearchStatus('ready')
+      } catch (error) {
+        if ((error as Error).name === 'AbortError') {
+          return
+        }
+
+        setSearchResults([])
+        setSearchStatus('error')
+      }
+    }, 350)
+
+    return () => {
+      controller.abort()
+      window.clearTimeout(timeoutId)
+    }
+  }, [query])
+
+  useEffect(() => {
+    const buildEstimatedRoute = () => {
+      const estimatedDistanceKm = Math.max(
+        1,
+        Math.round(computeDistanceKm(routeOrigin, selectedDestination.coordinates) * 1.18 * 10) / 10,
+      )
+
+      setRouteMetrics({
+        distanceKm: estimatedDistanceKm,
+        durationMinutes: selectedDestination.etaByMode[travelMode],
+        steps: selectedDestination.steps.length
+          ? selectedDestination.steps
+          : buildEstimatedSteps(selectedDestination),
+        source: 'estimated',
+      })
+    }
+
+    if (travelMode === 'transit') {
+      buildEstimatedRoute()
+      return
+    }
+
+    const controller = new AbortController()
+
+    void (async () => {
+      try {
+        const profile = travelMode === 'walk' ? 'walking' : 'driving'
+        const endpoint = new URL(
+          `https://router.project-osrm.org/route/v1/${profile}/${routeOrigin.longitude},${routeOrigin.latitude};${selectedDestination.coordinates.longitude},${selectedDestination.coordinates.latitude}`,
+        )
+        endpoint.searchParams.set('overview', 'false')
+        endpoint.searchParams.set('steps', 'true')
+
+        const response = await fetch(endpoint.toString(), {
+          signal: controller.signal,
+          headers: {
+            Accept: 'application/json',
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error('Routing failed')
+        }
+
+        const payload = (await response.json()) as {
+          routes?: Array<{
+            distance: number
+            duration: number
+            legs?: Array<{
+              steps?: Array<{
+                name: string
+                maneuver?: { instruction?: string; type?: string }
+              }>
+            }>
+          }>
+        }
+
+        const route = payload.routes?.[0]
+
+        if (!route) {
+          throw new Error('No route')
+        }
+
+        const stepList =
+          route.legs?.[0]?.steps
+            ?.slice(0, 3)
+            .map((step, index) => ({
+              title: step.maneuver?.instruction || step.name || `Step ${index + 1}`,
+              detail: step.name || step.maneuver?.type || 'Continue on the suggested route.',
+              baseMinuteOffset: Math.round((route.duration / 60 / 3) * index),
+            })) ?? []
+
+        setRouteMetrics({
+          distanceKm: Math.max(1, Math.round((route.distance / 1000) * 10) / 10),
+          durationMinutes: Math.max(1, Math.round(route.duration / 60)),
+          steps: stepList.length ? stepList : buildEstimatedSteps(selectedDestination),
+          source: 'live',
+        })
+      } catch (error) {
+        if ((error as Error).name === 'AbortError') {
+          return
+        }
+
+        buildEstimatedRoute()
+      }
+    })()
+
+    return () => {
+      controller.abort()
+    }
+  }, [routeOrigin, selectedDestination, travelMode])
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(display-mode: standalone)')
@@ -426,6 +680,7 @@ function App() {
   }
 
   const handleSelectDestination = (destinationId: string) => {
+    setSelectedSearchResult(null)
     setSelectedDestinationId(destinationId)
     setRecentIds((currentIds) => {
       const nextIds = [destinationId, ...currentIds.filter((id) => id !== destinationId)]
@@ -437,6 +692,12 @@ function App() {
     if (destination) {
       setLocationState('Route updated')
     }
+  }
+
+  const handleSelectSearchResult = (result: SearchResult) => {
+    setSelectedSearchResult(result)
+    setActiveTab('discover')
+    setLocationState(currentCoordinates ? 'Live route resolved' : 'Using default origin')
   }
 
   const toggleFavorite = (destinationId: string) => {
@@ -549,6 +810,46 @@ function App() {
           {filteredDestinations.length === 0 ? (
             <p className="empty-state">No destination matches this search yet.</p>
           ) : null}
+
+          {shouldSearchOnline ? (
+            <section className="remote-results-block">
+              <div className="section-header-row compact-header">
+                <div>
+                  <p className="micro-label">Online search</p>
+                  <strong>OpenStreetMap results</strong>
+                </div>
+                <span className="result-source-badge">
+                  {visibleSearchStatus === 'loading'
+                    ? 'Searching'
+                    : visibleSearchStatus === 'error'
+                      ? 'Unavailable'
+                      : visibleSearchResults.length
+                        ? `${visibleSearchResults.length} found`
+                        : 'No match'}
+                </span>
+              </div>
+
+              {visibleSearchResults.map((result) => (
+                <article key={result.id} className="result-card remote-card">
+                  <button
+                    type="button"
+                    className="result-main"
+                    onClick={() => handleSelectSearchResult(result)}
+                  >
+                    <div>
+                      <p className="micro-label">Search</p>
+                      <strong>{result.name}</strong>
+                      <p>{result.area}</p>
+                    </div>
+                    <div className="result-meta">
+                      <span>Route</span>
+                      <small>Live geocode</small>
+                    </div>
+                  </button>
+                </article>
+              ))}
+            </section>
+          ) : null}
         </div>
       </section>
 
@@ -558,9 +859,9 @@ function App() {
           <h2>{selectedDestination.description}</h2>
         </div>
         <div className="stat-row">
-          <span>{selectedDestination.distanceKm} km</span>
+          <span>{routeMetrics?.distanceKm ?? selectedDestination.distanceKm} km</span>
           <span>{selectedDestination.traffic} traffic</span>
-          <span>{selectedDestination.offlinePack}</span>
+          <span>{routeMetrics?.source === 'live' ? 'Live routing' : selectedDestination.offlinePack}</span>
         </div>
       </section>
     </>
@@ -577,7 +878,7 @@ function App() {
       </div>
 
       <ol className="timeline-list">
-        {selectedDestination.steps.map((step) => (
+        {(routeMetrics?.steps ?? selectedDestination.steps).map((step) => (
           <li key={step.title}>
             <span>{formatClock(step.baseMinuteOffset)}</span>
             <div>
@@ -594,8 +895,8 @@ function App() {
           <span>Parking status</span>
         </article>
         <article>
-          <strong>{selectedDestination.offlinePack}</strong>
-          <span>Offline pack</span>
+          <strong>{routeMetrics?.source === 'live' ? 'OSRM live route' : selectedDestination.offlinePack}</strong>
+          <span>{routeMetrics?.source === 'live' ? 'Routing source' : 'Offline pack'}</span>
         </article>
       </div>
     </section>
@@ -799,6 +1100,7 @@ function App() {
             <ul>
               <li>{selectedDestination.description}</li>
               <li>Browser geolocation can refresh current position and recompute route metrics.</li>
+              <li>Remote search uses OpenStreetMap geocoding and OSRM routing services.</li>
               <li>{selectedDestination.parking}</li>
               <li>Offline pack: {selectedDestination.offlinePack}</li>
             </ul>

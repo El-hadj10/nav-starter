@@ -390,6 +390,28 @@
   gap: 12px;
 }
 
+.remote-results-block {
+  display: grid;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+.compact-header {
+  align-items: center;
+}
+
+.result-source-badge {
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  color: var(--accent-soft);
+  background: rgba(71, 255, 229, 0.08);
+  font-size: 0.82rem;
+}
+
+.remote-card {
+  border: 1px dashed rgba(71, 255, 229, 0.22);
+}
+
 .result-card,
 .saved-item-card,
 .recent-item {
