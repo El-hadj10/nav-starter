@@ -1,6 +1,6 @@
 # nav-starter
 
-Starter front-end base sur React, TypeScript et Vite. Le projet contient maintenant une interface mobile de navigation, une barre d'onglets type application et les fichiers PWA necessaires pour une installation sur telephone.
+Starter front-end base sur React, TypeScript et Vite. Le projet contient maintenant une interface mobile de navigation installable avec recherche de destinations, modes de trajet, favoris persistants et historique recent.
 
 ## Scripts
 
@@ -37,8 +37,8 @@ npm run lint
 
 ## Structure utile
 
-- `src/App.tsx` contient l'experience mobile et la logique du bouton d'installation.
-- `src/App.css` contient la mise en page type application.
+- `src/App.tsx` contient l'experience mobile, la recherche, les favoris persistants et l'historique recent.
+- `src/App.css` contient la mise en page type application et les composants interactifs.
 - `public/manifest.webmanifest` decrit l'application installable.
 - `public/service-worker.js` gere le cache hors ligne de base.
 - `docs/README.md` centralise la documentation du projet.
