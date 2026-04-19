@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch nav-starter",
+      "type": "pwa-chrome",
+      "request": "launch",
+      "url": "http://localhost:5173/nav-starter/",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "dev server"
+    }
+  ]
+}
