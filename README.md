@@ -41,6 +41,7 @@ npm run lint
 - `src/App.css` contient la mise en page type application.
 - `public/manifest.webmanifest` decrit l'application installable.
 - `public/service-worker.js` gere le cache hors ligne de base.
+- `docs/README.md` centralise la documentation du projet.
 
 ## Depot GitHub
 
