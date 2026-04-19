@@ -1,3 +1,15 @@
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .app-shell {
   display: grid;
   gap: 24px;
@@ -51,10 +63,25 @@
 .map-overlay strong,
 .timeline-list strong,
 .saved-item strong,
+.saved-item-card strong,
 .profile-grid strong,
-.screen-header strong {
+.recent-item strong,
+.result-main strong,
+.screen-header strong,
+.journey-summary-grid strong {
   display: block;
   color: var(--text-h);
+}
+
+.install-button,
+.ghost-button,
+.mode-button,
+.favorite-button,
+.result-main,
+.saved-item,
+.recent-item,
+.tab-button {
+  font: inherit;
 }
 
 .install-button {
@@ -62,7 +89,6 @@
   padding: 0 18px;
   border: 0;
   border-radius: 999px;
-  font: inherit;
   font-weight: 700;
   color: #062033;
   background: linear-gradient(135deg, #47ffe5, #8cf7a7);
@@ -77,7 +103,8 @@
 .summary-grid,
 .experience-grid,
 .details-panel,
-.profile-grid {
+.profile-grid,
+.journey-summary-grid {
   display: grid;
 }
 
@@ -96,10 +123,16 @@
 .summary-card span,
 .install-banner p,
 .details-card li,
+.details-card p,
 .timeline-list p,
 .saved-item p,
 .profile-grid span,
-.map-overlay span {
+.journey-summary-grid span,
+.map-overlay span,
+.empty-state,
+.recent-item p,
+.result-main p,
+.result-meta small {
   color: var(--text-soft);
 }
 
@@ -127,17 +160,35 @@
   pointer-events: none;
 }
 
+.screen-content {
+  display: grid;
+  gap: 16px;
+}
+
 .phone-topbar,
 .screen-header,
 .stat-row,
 .saved-item,
-.tab-button {
+.saved-item-card,
+.tab-button,
+.search-row,
+.section-header-row,
+.result-card,
+.result-main,
+.result-meta,
+.recent-item {
   display: flex;
   align-items: center;
 }
 
 .phone-topbar,
-.screen-header {
+.screen-header,
+.search-row,
+.section-header-row,
+.result-card,
+.saved-item-card,
+.recent-item,
+.result-main {
   justify-content: space-between;
 }
 
@@ -171,7 +222,6 @@
 
 .map-card {
   min-height: 290px;
-  margin-bottom: 16px;
   background:
     linear-gradient(180deg, rgba(11, 42, 71, 0.98), rgba(7, 27, 46, 0.98));
 }
@@ -236,9 +286,13 @@
 }
 
 .route-pill {
+  max-width: 42%;
+  overflow: hidden;
   padding: 0.35rem 0.65rem;
   border-radius: 999px;
   font-size: 0.8rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   color: #081725;
   background: rgba(255, 255, 255, 0.88);
 }
@@ -270,6 +324,126 @@
   background: rgba(255, 255, 255, 0.06);
 }
 
+.search-card,
+.saved-card,
+.profile-card {
+  display: grid;
+  gap: 18px;
+}
+
+.search-row {
+  gap: 10px;
+}
+
+.search-field {
+  flex: 1 1 auto;
+}
+
+.search-field input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  font: inherit;
+  color: var(--text-h);
+  background: rgba(3, 13, 26, 0.74);
+}
+
+.ghost-button,
+.mode-button,
+.favorite-button,
+.inline-ghost {
+  min-height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  color: var(--text-h);
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+}
+
+.ghost-button {
+  padding: 0 14px;
+}
+
+.mode-switcher {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.mode-button {
+  min-height: 42px;
+}
+
+.mode-button.is-active,
+.favorite-button.is-active {
+  color: #062033;
+  background: linear-gradient(135deg, #47ffe5, #8cf7a7);
+}
+
+.results-list,
+.saved-list,
+.recent-list,
+.details-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.result-card,
+.saved-item-card,
+.recent-item {
+  gap: 10px;
+  padding: 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.result-card.is-selected {
+  border: 1px solid rgba(71, 255, 229, 0.4);
+  background: rgba(71, 255, 229, 0.08);
+}
+
+.result-main,
+.saved-item,
+.recent-item {
+  flex: 1 1 auto;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+}
+
+.result-meta {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.result-meta span,
+.saved-item span,
+.recent-item span {
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  color: #081725;
+  background: linear-gradient(135deg, #47ffe5, #8cf7a7);
+  font-weight: 700;
+}
+
+.favorite-button {
+  min-width: 72px;
+  padding: 0 12px;
+}
+
+.empty-state {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
 .emphasis-card {
   background:
     linear-gradient(180deg, rgba(71, 255, 229, 0.14), rgba(255, 255, 255, 0.06));
@@ -278,7 +452,7 @@
 .stat-row {
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 18px;
+  margin-top: 8px;
 }
 
 .stat-row span {
@@ -291,7 +465,7 @@
 .timeline-list,
 .details-card ul,
 .details-card ol {
-  margin: 18px 0 0;
+  margin: 0;
   padding: 0;
 }
 
@@ -316,28 +490,29 @@
   font-weight: 700;
 }
 
-.saved-list,
-.details-panel {
-  gap: 16px;
+.journey-summary-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.journey-summary-grid article,
+.profile-grid article,
+.recent-panel {
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .saved-item {
   justify-content: space-between;
-  gap: 16px;
-  padding: 14px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.saved-item:first-child {
-  border-top: 0;
 }
 
 .saved-item span {
-  padding: 0.35rem 0.7rem;
-  border-radius: 999px;
-  color: #081725;
-  background: linear-gradient(135deg, #47ffe5, #8cf7a7);
-  font-weight: 700;
+  white-space: nowrap;
+}
+
+.inline-ghost {
+  min-width: 84px;
 }
 
 .profile-grid {
@@ -346,15 +521,14 @@
   margin-top: 18px;
 }
 
-.profile-grid article {
-  padding: 16px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.06);
-}
-
 .profile-grid strong {
   font-size: 1.35rem;
   margin-bottom: 8px;
+}
+
+.recent-panel {
+  display: grid;
+  gap: 12px;
 }
 
 .bottom-nav {
@@ -372,9 +546,8 @@
   min-height: 72px;
   border: 0;
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.05);
   color: var(--text-soft);
-  font: inherit;
+  background: rgba(255, 255, 255, 0.05);
   cursor: pointer;
 }
 
@@ -414,6 +587,12 @@
 
 @media (hover: hover) {
   .install-button:hover,
+  .ghost-button:hover,
+  .mode-button:hover,
+  .favorite-button:hover,
+  .result-main:hover,
+  .saved-item:hover,
+  .recent-item:hover,
   .tab-button:hover,
   .repo-link:hover {
     transform: translateY(-1px);
@@ -423,7 +602,8 @@
 @media (max-width: 960px) {
   .summary-grid,
   .experience-grid,
-  .profile-grid {
+  .profile-grid,
+  .journey-summary-grid {
     grid-template-columns: 1fr;
   }
 
@@ -448,6 +628,15 @@
     border-radius: 30px;
   }
 
+  .search-row,
+  .result-card,
+  .saved-item-card,
+  .section-header-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .mode-switcher,
   .bottom-nav {
     gap: 6px;
   }
