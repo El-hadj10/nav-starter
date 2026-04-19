@@ -434,10 +434,7 @@ function App() {
       setSearchStatus('loading')
 
       try {
-        const endpoint = new URL('https://nominatim.openstreetmap.org/search')
-        endpoint.searchParams.set('format', 'jsonv2')
-        endpoint.searchParams.set('limit', '5')
-        endpoint.searchParams.set('addressdetails', '1')
+        const endpoint = new URL('/api/geocode', window.location.origin)
         endpoint.searchParams.set('q', normalizedQuery)
 
         const response = await fetch(endpoint.toString(), {
@@ -451,26 +448,24 @@ function App() {
           throw new Error('Geocoding failed')
         }
 
-        const payload = (await response.json()) as Array<{
-          place_id: number
-          display_name: string
-          lat: string
-          lon: string
-          address?: Record<string, string>
-        }>
+        // Mapbox response format
+        const payload = (await response.json()) as {
+          features: Array<{
+            id: string
+            place_name: string
+            text: string
+            center: [number, number]
+            context?: Array<{ text: string }>
+          }>
+        }
 
-        const nextResults = payload.map((entry) => ({
-          id: `search-${entry.place_id}`,
-          name: entry.address?.amenity || entry.address?.building || entry.display_name.split(',')[0],
-          area:
-            entry.address?.suburb ||
-            entry.address?.city ||
-            entry.address?.town ||
-            entry.address?.county ||
-            'OpenStreetMap result',
+        const nextResults = payload.features.map((entry) => ({
+          id: entry.id,
+          name: entry.text,
+          area: entry.context?.[0]?.text || entry.place_name.split(',')[1] || 'Result',
           coordinates: {
-            latitude: Number(entry.lat),
-            longitude: Number(entry.lon),
+            latitude: entry.center[1],
+            longitude: entry.center[0],
           },
         }))
 
@@ -516,14 +511,16 @@ function App() {
 
     const controller = new AbortController()
 
+
     void (async () => {
       try {
         const profile = travelMode === 'walk' ? 'walking' : 'driving'
-        const endpoint = new URL(
-          `https://router.project-osrm.org/route/v1/${profile}/${routeOrigin.longitude},${routeOrigin.latitude};${selectedDestination.coordinates.longitude},${selectedDestination.coordinates.latitude}`,
-        )
-        endpoint.searchParams.set('overview', 'false')
-        endpoint.searchParams.set('steps', 'true')
+        const from = `${routeOrigin.longitude},${routeOrigin.latitude}`
+        const to = `${selectedDestination.coordinates.longitude},${selectedDestination.coordinates.latitude}`
+        const endpoint = new URL('/api/route', window.location.origin)
+        endpoint.searchParams.set('from', from)
+        endpoint.searchParams.set('to', to)
+        endpoint.searchParams.set('profile', profile)
 
         const response = await fetch(endpoint.toString(), {
           signal: controller.signal,
@@ -536,14 +533,15 @@ function App() {
           throw new Error('Routing failed')
         }
 
+        // Mapbox Directions API response format
         const payload = (await response.json()) as {
           routes?: Array<{
             distance: number
             duration: number
             legs?: Array<{
               steps?: Array<{
+                maneuver?: { instruction?: string; type?: string; modifier?: string }
                 name: string
-                maneuver?: { instruction?: string; type?: string }
               }>
             }>
           }>
