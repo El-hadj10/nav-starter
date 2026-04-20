@@ -51,6 +51,16 @@ type Destination = {
   steps: RouteStep[]
 }
 
+const configuredApiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/$/, '')
+
+function buildApiUrl(pathname: string): URL {
+  if (configuredApiBaseUrl) {
+    return new URL(pathname, `${configuredApiBaseUrl}/`)
+  }
+
+  return new URL(pathname, window.location.origin)
+}
+
 const tabs: Array<{ id: TabId; label: string; icon: string }> = [
   { id: 'discover', label: 'Discover', icon: '◎' },
   { id: 'journeys', label: 'Journeys', icon: '↗' },
@@ -434,7 +444,7 @@ function App() {
       setSearchStatus('loading')
 
       try {
-        const endpoint = new URL('/api/geocode', window.location.origin)
+        const endpoint = buildApiUrl('/api/geocode')
         endpoint.searchParams.set('q', normalizedQuery)
 
         const response = await fetch(endpoint.toString(), {
@@ -517,7 +527,7 @@ function App() {
         const profile = travelMode === 'walk' ? 'walking' : 'driving'
         const from = `${routeOrigin.longitude},${routeOrigin.latitude}`
         const to = `${selectedDestination.coordinates.longitude},${selectedDestination.coordinates.latitude}`
-        const endpoint = new URL('/api/route', window.location.origin)
+        const endpoint = buildApiUrl('/api/route')
         endpoint.searchParams.set('from', from)
         endpoint.searchParams.set('to', to)
         endpoint.searchParams.set('profile', profile)

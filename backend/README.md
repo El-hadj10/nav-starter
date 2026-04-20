@@ -1,30 +1,44 @@
 # Backend Node.js pour nav-starter
 
-Ce backend sert de proxy sécurisé pour les appels aux APIs de géocodage et de routage (ex : Mapbox, Here, etc.), afin de protéger les clés et centraliser la configuration.
+Ce backend sert de proxy sécurisé pour les appels aux APIs de géocodage et de routage Mapbox afin de protéger les clés et centraliser la configuration.
 
 ## Installation
 
-1. Placer votre clé API dans un fichier `.env` à la racine du dossier backend :
+1. Définir les variables d'environnement :
 
-```
+```bash
 MAPBOX_TOKEN=VOTRE_CLE_API
+ALLOWED_ORIGINS=https://el-hadj10.github.io,http://localhost:5173
+PORT=4000
 ```
 
-2. Installer les dépendances :
+1. Installer les dépendances à la racine du projet :
 
-```
-npm install express node-fetch dotenv
-```
-
-3. Lancer le serveur :
-
-```
-node index.js
+```bash
+npm install
 ```
 
-## Endpoints
+1. Lancer le serveur :
 
-- `/api/geocode?q=adresse` → proxy vers le fournisseur de géocodage
-- `/api/route?from=lon,lat&to=lon,lat` → proxy vers le fournisseur de routage
+```bash
+npm run backend:start
+```
 
-Adaptez les URLs dans `index.js` selon le fournisseur choisi.
+## Endpoints utiles
+
+- `/health` : vérification simple de disponibilité
+- `/api/geocode?q=adresse` : proxy vers Mapbox Geocoding
+- `/api/route?from=lon,lat&to=lon,lat&profile=driving|walking` : proxy vers Mapbox Directions
+
+## Deploiement Render
+
+- Runtime : Node
+- Build command : `npm install`
+- Start command : `npm run backend:start`
+- Variables : `MAPBOX_TOKEN`, `ALLOWED_ORIGINS`
+
+## Deploiement Railway
+
+- Start command : `npm run backend:start`
+- Variables : `MAPBOX_TOKEN`, `ALLOWED_ORIGINS`
+- Health check : `/health`
