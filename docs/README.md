@@ -19,8 +19,8 @@ nav-starter est une application front-end React, TypeScript et Vite orientee mob
 - Changement de mode de trajet entre voiture, transport et marche.
 - Sauvegarde locale des favoris et des destinations recentes via localStorage.
 - Geolocalisation navigateur pour recalculer distance et ETA depuis la position courante.
-- Recherche distante via Nominatim OpenStreetMap.
-- Routage route et marche via OSRM, avec fallback estime si le service ne repond pas.
+- Recherche distante via Mapbox Geocoding, au travers d'un backend proxy.
+- Routage route et marche via Mapbox Directions, avec fallback estime si le service ne repond pas.
 - Installation mobile via PWA.
 
 ## Points techniques
@@ -31,6 +31,7 @@ nav-starter est une application front-end React, TypeScript et Vite orientee mob
 - Manifest PWA : `public/manifest.webmanifest`
 - Service worker : `public/service-worker.js`
 - Deploiement GitHub Pages : `.github/workflows/deploy-pages.yml`
+- Backend de proxy : `backend/index.js`
 
 ## Lancer le projet
 
@@ -47,6 +48,13 @@ URL locale attendue : `http://localhost:5173/nav-starter/`
 npm run lint
 npm run build
 ```
+
+## Strategie de deploiement
+
+- Front-end : GitHub Pages
+- Backend : Render ou Railway
+- Variable de build front : `VITE_API_BASE_URL`
+- Variables backend : `MAPBOX_TOKEN`, `ALLOWED_ORIGINS`, `PORT`
 
 ## Installation sur telephone
 

@@ -32,6 +32,8 @@ jobs:
         run: npm ci
 
       - name: Build app
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
         run: npm run build
 
       - name: Upload Pages artifact
