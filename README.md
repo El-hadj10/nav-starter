@@ -1,39 +1,5 @@
 
-# Luma — E-commerce IA Généraliste
-
-> Vitrine intelligente automatisée — produits sourcés, optimisés et publiés par IA.
-
-## Modules
-
-| Dossier | Stack | Rôle |
-|---|---|---|
-| `frontend/` | Next.js 14 + Tailwind | Vitrine client (catalogue, panier, checkout) |
-| `api/` | FastAPI + Python | Backend REST, auth, webhooks Stripe |
-| `agents/` | Python + OpenAI/Anthropic | Moteur IA multi-agents |
-| `connectors/` | Python + httpx | Amazon PA-API, eBay, AliExpress |
-| `database/` | PostgreSQL + Alembic | Schémas, migrations |
-| `infrastructure/` | Docker + Nginx + CI | Déploiement, reverse proxy |
-| `shared/` | Pydantic | Schemas et constantes communs |
-
-## Démarrage rapide
-
-```bash
-# Infra locale
-docker compose -f infrastructure/docker-compose.yml up postgres redis -d
-
-# API
-cd api && cp .env.example .env && pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
-
-# Frontend
-cd ../frontend && npm install && npm run dev
-```
-
-Vitrine : http://localhost:3000 | API docs : http://localhost:8000/docs
-
-## Documentation
-
-- [Architecture complète](docs/architecture.md)
+# nav-starter
 
 Starter front-end basé sur React, TypeScript et Vite. Le projet contient maintenant :
 

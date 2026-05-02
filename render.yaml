@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: nav-starter-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm run backend:start
+    healthCheckPath: /health
+    envVars:
+      - key: MAPBOX_TOKEN
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: https://el-hadj10.github.io
