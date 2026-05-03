@@ -69,14 +69,13 @@ Plateforme e-commerce pilotee par IA : sourcing, scoring, pricing et publication
 
 ## GitHub Pulse
 
-<div align="center">
-  <img src="https://github-readme-stats.vercel.app/api?username=El-hadj10&show_icons=true&theme=tokyonight" alt="GitHub Stats" width="420" />
-  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=El-hadj10&layout=compact&theme=tokyonight" alt="Top Languages" width="340" />
-</div>
+| Stats | Top Languages |
+|:---:|:---:|
+| ![GitHub Stats](https://github-readme-stats.vercel.app/api?username=El-hadj10&show_icons=true&theme=tokyonight&hide_border=true) | ![Top Languages](https://github-readme-stats.vercel.app/api/top-langs/?username=El-hadj10&layout=compact&theme=tokyonight&hide_border=true) |
 
-<div align="center">
-  <img src="https://streak-stats.demolab.com?user=El-hadj10&theme=tokyonight" alt="GitHub Streak" width="500" />
-</div>
+<p align="center">
+  <img src="https://streak-stats.demolab.com?user=El-hadj10&theme=tokyonight&hide_border=true" alt="GitHub Streak" />
+</p>
 
 ---
 
