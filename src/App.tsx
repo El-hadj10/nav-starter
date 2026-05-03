@@ -51,13 +51,14 @@ type Destination = {
   steps: RouteStep[]
 }
 
+// Base API configurable (dev/prod)
 const configuredApiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/$/, '')
 
+// Construit l’URL d’API selon l’environnement
 function buildApiUrl(pathname: string): URL {
   if (configuredApiBaseUrl) {
     return new URL(pathname, `${configuredApiBaseUrl}/`)
   }
-
   return new URL(pathname, window.location.origin)
 }
 
@@ -197,34 +198,32 @@ const destinations: Destination[] = [
   },
 ]
 
+// Clés de stockage local pour favoris et historique
 const favoriteStorageKey = 'nav-starter.favorite-destinations'
 const historyStorageKey = 'nav-starter.recent-destinations'
 const defaultOrigin: Coordinates = { latitude: 5.3207, longitude: -4.0161 }
 
+// Lecture sécurisée du localStorage
 function readStoredIds(storageKey: string, fallback: string[]) {
   if (typeof window === 'undefined') {
     return fallback
   }
-
   try {
     const rawValue = window.localStorage.getItem(storageKey)
-
     if (!rawValue) {
       return fallback
     }
-
     const parsedValue = JSON.parse(rawValue)
-
     if (!Array.isArray(parsedValue)) {
       return fallback
     }
-
     return parsedValue.filter((entry): entry is string => typeof entry === 'string')
   } catch {
     return fallback
   }
 }
 
+// Persistance dans le localStorage
 function persistIds(storageKey: string, values: string[]) {
   window.localStorage.setItem(storageKey, JSON.stringify(values))
 }
@@ -344,85 +343,61 @@ function buildSearchDestination(result: SearchResult): Destination {
 }
 
 function App() {
-  const [activeTab, setActiveTab] = useState<TabId>('discover')
-  const [travelMode, setTravelMode] = useState<TravelMode>('drive')
-  const [query, setQuery] = useState('')
-  const [selectedDestinationId, setSelectedDestinationId] = useState('marina-hub')
-  const [selectedSearchResult, setSelectedSearchResult] =
-    useState<SearchResult | null>(null)
-  const [locationLabel, setLocationLabel] = useState('Lagoon District')
-  const [locationState, setLocationState] = useState('GPS strong')
-  const [currentCoordinates, setCurrentCoordinates] = useState<Coordinates | null>(null)
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
-  const [searchStatus, setSearchStatus] = useState<SearchStatus>('idle')
-  const [routeMetrics, setRouteMetrics] = useState<RouteMetrics | null>(null)
-  const [installPrompt, setInstallPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null)
-  const [isInstalled, setIsInstalled] = useState(false)
-  const [favoriteIds, setFavoriteIds] = useState<string[]>(() =>
-    readStoredIds(favoriteStorageKey, ['marina-hub', 'canal-market']),
-  )
-  const [recentIds, setRecentIds] = useState<string[]>(() =>
-    readStoredIds(historyStorageKey, ['marina-hub']),
-  )
+  // --- États principaux de l’application ---
+  const [activeTab, setActiveTab] = useState<TabId>('discover') // Tab actif
+  const [travelMode, setTravelMode] = useState<TravelMode>('drive') // Mode de transport
+  const [query, setQuery] = useState('') // Recherche utilisateur
+  const [selectedDestinationId, setSelectedDestinationId] = useState('marina-hub') // Destination sélectionnée
+  const [selectedSearchResult, setSelectedSearchResult] = useState<SearchResult | null>(null) // Résultat de recherche sélectionné
+  const [locationLabel, setLocationLabel] = useState('Lagoon District') // Libellé de localisation
+  const [locationState, setLocationState] = useState('GPS strong') // État GPS
+  const [currentCoordinates, setCurrentCoordinates] = useState<Coordinates | null>(null) // Coordonnées courantes
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]) // Résultats de recherche
+  const [searchStatus, setSearchStatus] = useState<SearchStatus>('idle') // Statut recherche
+  const [routeMetrics, setRouteMetrics] = useState<RouteMetrics | null>(null) // Infos de route
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null) // PWA install
+  const [isInstalled, setIsInstalled] = useState(false) // PWA installée
+  // Favoris et historique (persistés)
+  const [favoriteIds, setFavoriteIds] = useState<string[]>(() => readStoredIds(favoriteStorageKey, ['marina-hub', 'canal-market']))
+  const [recentIds, setRecentIds] = useState<string[]>(() => readStoredIds(historyStorageKey, ['marina-hub']))
 
+  // Origine pour le calcul d’itinéraire
   const routeOrigin = currentCoordinates ?? defaultOrigin
 
-  const liveDestinations = useMemo(
-    () =>
-      destinations.map((destination) => {
-        const directDistanceKm = computeDistanceKm(routeOrigin, destination.coordinates)
-        const routedDistanceKm = Math.max(1, Math.round(directDistanceKm * 1.18 * 10) / 10)
+  // Destinations enrichies avec calculs live
+  const liveDestinations = useMemo(() => destinations.map((destination) => {
+    const directDistanceKm = computeDistanceKm(routeOrigin, destination.coordinates)
+    const routedDistanceKm = Math.max(1, Math.round(directDistanceKm * 1.18 * 10) / 10)
+    return {
+      ...destination,
+      distanceKm: routedDistanceKm,
+      etaByMode: {
+        drive: computeLiveEta(routedDistanceKm, 'drive', destination.traffic),
+        transit: computeLiveEta(routedDistanceKm, 'transit', destination.traffic),
+        walk: computeLiveEta(routedDistanceKm, 'walk', destination.traffic),
+      },
+    }
+  }), [routeOrigin])
 
-        return {
-          ...destination,
-          distanceKm: routedDistanceKm,
-          etaByMode: {
-            drive: computeLiveEta(routedDistanceKm, 'drive', destination.traffic),
-            transit: computeLiveEta(routedDistanceKm, 'transit', destination.traffic),
-            walk: computeLiveEta(routedDistanceKm, 'walk', destination.traffic),
-          },
-        }
-      }),
-    [routeOrigin],
-  )
-
+  // Filtrage par recherche
   const filteredDestinations = useMemo(() => liveDestinations.filter((destination) => {
     const normalizedQuery = query.trim().toLowerCase()
-
-    if (!normalizedQuery) {
-      return true
-    }
-
-    return [destination.name, destination.area, destination.tag]
-      .join(' ')
-      .toLowerCase()
-      .includes(normalizedQuery)
+    if (!normalizedQuery) return true
+    return [destination.name, destination.area, destination.tag].join(' ').toLowerCase().includes(normalizedQuery)
   }), [liveDestinations, query])
 
-  const selectedDestination = useMemo(
-    () =>
-      selectedSearchResult
-        ? buildSearchDestination(selectedSearchResult)
-        : (liveDestinations.find((destination) => destination.id === selectedDestinationId) ??
-          liveDestinations[0]),
-    [liveDestinations, selectedDestinationId, selectedSearchResult],
-  )
+  // Destination sélectionnée (recherche ou liste)
+  const selectedDestination = useMemo(() =>
+    selectedSearchResult
+      ? buildSearchDestination(selectedSearchResult)
+      : (liveDestinations.find((destination) => destination.id === selectedDestinationId) ?? liveDestinations[0])
+  , [liveDestinations, selectedDestinationId, selectedSearchResult])
 
-  const favoriteDestinations = useMemo(
-    () =>
-      liveDestinations.filter((destination) => favoriteIds.includes(destination.id)),
-    [favoriteIds, liveDestinations],
-  )
+  // Favoris et historique enrichis
+  const favoriteDestinations = useMemo(() => liveDestinations.filter((destination) => favoriteIds.includes(destination.id)), [favoriteIds, liveDestinations])
+  const recentDestinations = useMemo(() => recentIds.map((id) => liveDestinations.find((destination) => destination.id === id)).filter((destination): destination is Destination => Boolean(destination)), [liveDestinations, recentIds])
 
-  const recentDestinations = useMemo(
-    () =>
-      recentIds
-        .map((id) => liveDestinations.find((destination) => destination.id === id))
-        .filter((destination): destination is Destination => Boolean(destination)),
-    [liveDestinations, recentIds],
-  )
-
+  // Métriques d’itinéraire
   const activeEta = routeMetrics?.durationMinutes ?? selectedDestination.etaByMode[travelMode]
   const arrivalTime = formatClock(activeEta)
   const totalTrips = recentIds.length + 9
@@ -431,34 +406,22 @@ function App() {
   const visibleSearchResults = shouldSearchOnline ? searchResults : []
   const visibleSearchStatus = shouldSearchOnline ? searchStatus : 'idle'
 
+  // --- Effet : recherche géocodage Mapbox ---
   useEffect(() => {
     const normalizedQuery = query.trim()
-
-    if (normalizedQuery.length < 3) {
-      return
-    }
-
+    if (normalizedQuery.length < 3) return
     const controller = new AbortController()
-
     const timeoutId = window.setTimeout(async () => {
       setSearchStatus('loading')
-
       try {
         const endpoint = buildApiUrl('/api/geocode')
         endpoint.searchParams.set('q', normalizedQuery)
-
         const response = await fetch(endpoint.toString(), {
           signal: controller.signal,
-          headers: {
-            Accept: 'application/json',
-          },
+          headers: { Accept: 'application/json' },
         })
-
-        if (!response.ok) {
-          throw new Error('Geocoding failed')
-        }
-
-        // Mapbox response format
+        if (!response.ok) throw new Error('Geocoding failed')
+        // Format Mapbox
         const payload = (await response.json()) as {
           features: Array<{
             id: string
@@ -468,7 +431,6 @@ function App() {
             context?: Array<{ text: string }>
           }>
         }
-
         const nextResults = payload.features.map((entry) => ({
           id: entry.id,
           name: entry.text,
@@ -478,50 +440,36 @@ function App() {
             longitude: entry.center[0],
           },
         }))
-
         setSearchResults(nextResults)
         setSearchStatus('ready')
       } catch (error) {
-        if ((error as Error).name === 'AbortError') {
-          return
-        }
-
+        if ((error as Error).name === 'AbortError') return
         setSearchResults([])
         setSearchStatus('error')
       }
     }, 350)
-
     return () => {
       controller.abort()
       window.clearTimeout(timeoutId)
     }
   }, [query])
 
+  // --- Effet : calcul d’itinéraire (Mapbox Directions ou estimation) ---
   useEffect(() => {
     const buildEstimatedRoute = () => {
-      const estimatedDistanceKm = Math.max(
-        1,
-        Math.round(computeDistanceKm(routeOrigin, selectedDestination.coordinates) * 1.18 * 10) / 10,
-      )
-
+      const estimatedDistanceKm = Math.max(1, Math.round(computeDistanceKm(routeOrigin, selectedDestination.coordinates) * 1.18 * 10) / 10)
       setRouteMetrics({
         distanceKm: estimatedDistanceKm,
         durationMinutes: selectedDestination.etaByMode[travelMode],
-        steps: selectedDestination.steps.length
-          ? selectedDestination.steps
-          : buildEstimatedSteps(selectedDestination),
+        steps: selectedDestination.steps.length ? selectedDestination.steps : buildEstimatedSteps(selectedDestination),
         source: 'estimated',
       })
     }
-
     if (travelMode === 'transit') {
       buildEstimatedRoute()
       return
     }
-
     const controller = new AbortController()
-
-
     void (async () => {
       try {
         const profile = travelMode === 'walk' ? 'walking' : 'driving'
@@ -531,19 +479,12 @@ function App() {
         endpoint.searchParams.set('from', from)
         endpoint.searchParams.set('to', to)
         endpoint.searchParams.set('profile', profile)
-
         const response = await fetch(endpoint.toString(), {
           signal: controller.signal,
-          headers: {
-            Accept: 'application/json',
-          },
+          headers: { Accept: 'application/json' },
         })
-
-        if (!response.ok) {
-          throw new Error('Routing failed')
-        }
-
-        // Mapbox Directions API response format
+        if (!response.ok) throw new Error('Routing failed')
+        // Format Mapbox Directions
         const payload = (await response.json()) as {
           routes?: Array<{
             distance: number
@@ -556,22 +497,13 @@ function App() {
             }>
           }>
         }
-
         const route = payload.routes?.[0]
-
-        if (!route) {
-          throw new Error('No route')
-        }
-
-        const stepList =
-          route.legs?.[0]?.steps
-            ?.slice(0, 3)
-            .map((step, index) => ({
-              title: step.maneuver?.instruction || step.name || `Step ${index + 1}`,
-              detail: step.name || step.maneuver?.type || 'Continue on the suggested route.',
-              baseMinuteOffset: Math.round((route.duration / 60 / 3) * index),
-            })) ?? []
-
+        if (!route) throw new Error('No route')
+        const stepList = route.legs?.[0]?.steps?.slice(0, 3).map((step, index) => ({
+          title: step.maneuver?.instruction || step.name || `Step ${index + 1}`,
+          detail: step.name || step.maneuver?.type || 'Continue on the suggested route.',
+          baseMinuteOffset: Math.round((route.duration / 60 / 3) * index),
+        })) ?? []
         setRouteMetrics({
           distanceKm: Math.max(1, Math.round((route.distance / 1000) * 10) / 10),
           durationMinutes: Math.max(1, Math.round(route.duration / 60)),
@@ -579,14 +511,10 @@ function App() {
           source: 'live',
         })
       } catch (error) {
-        if ((error as Error).name === 'AbortError') {
-          return
-        }
-
+        if ((error as Error).name === 'AbortError') return
         buildEstimatedRoute()
       }
     })()
-
     return () => {
       controller.abort()
     }
