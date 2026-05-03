@@ -1,8 +1,0 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-:root {
-  --color-brand: #6366f1;
-  --color-brand-dark: #4338ca;
-}
