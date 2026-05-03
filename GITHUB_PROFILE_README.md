@@ -1,7 +1,7 @@
 <h1 align="center">Nour · El-hadj10</h1>
 
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&height=220&color=0:0f172a,100:0ea5e9&text=Full-Stack%20%26%20Cybersecurity&fontColor=ffffff&fontAlignY=36&desc=I%20build%20things%20that%20work%2C%20then%20harden%20them.&descAlignY=56&descColor=e2e8f0" alt="Profile Banner" />
+  <img src="https://capsule-render.vercel.app/api?type=waving&height=200&color=0:0f172a,100:0ea5e9&text=Nour%20El-hadj10&fontColor=ffffff&fontAlignY=40&fontSize=40" alt="Profile Banner" />
 </p>
 
 <p align="center">
@@ -70,12 +70,12 @@ Plateforme e-commerce pilotee par IA : sourcing, scoring, pricing et publication
 ## GitHub Pulse
 
 <div align="center">
-  <img src="https://github-readme-stats.vercel.app/api?username=El-hadj10&show_icons=true&hide_border=true&bg_color=0d1117&title_color=0ea5e9&icon_color=0ea5e9&text_color=cbd5e1" alt="GitHub Stats" width="420" />
-  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=El-hadj10&layout=compact&hide_border=true&bg_color=0d1117&title_color=0ea5e9&text_color=cbd5e1" alt="Top Languages" width="340" />
+  <img src="https://github-readme-stats.vercel.app/api?username=El-hadj10&show_icons=true&theme=tokyonight" alt="GitHub Stats" width="420" />
+  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=El-hadj10&layout=compact&theme=tokyonight" alt="Top Languages" width="340" />
 </div>
 
 <div align="center">
-  <img src="https://streak-stats.demolab.com?user=El-hadj10&theme=dark&hide_border=true&ring=0ea5e9&fire=0ea5e9&currStreakLabel=0ea5e9" alt="GitHub Streak" width="500" />
+  <img src="https://streak-stats.demolab.com?user=El-hadj10&theme=tokyonight" alt="GitHub Streak" width="500" />
 </div>
 
 ---
