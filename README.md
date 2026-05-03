@@ -1,79 +1,146 @@
 
-# nav-starter
+# Luma.store
 
-Starter front-end basé sur React, TypeScript et Vite. Le projet contient maintenant :
+<p align="center">
+	<img src="https://capsule-render.vercel.app/api?type=waving&height=220&color=0:f59e0b,100:f97316&text=Luma.store&fontAlignY=36&desc=AI%20Commerce%20Engine&descAlignY=56&fontColor=ffffff" alt="Luma Banner" />
+</p>
 
-- Interface mobile de navigation installable (PWA)
-- Recherche de destinations, favoris persistants, historique récent
-- Géolocalisation navigateur
-- Intégration de géocodage/routage via backend proxy sécurisé (Mapbox)
+<p align="center">
+	<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=20&pause=900&color=F59E0B&center=true&vCenter=true&width=760&lines=Discover+%E2%86%92+Score+%E2%86%92+Price+%E2%86%92+Publish;Multi-agent+commerce+automation;FastAPI+%2B+Next.js+%2B+PostgreSQL+%2B+Redis" alt="Typing Intro" />
+</p>
 
-## Nouveautés architecture (avril 2026)
+<p align="center">
+	<a href="https://github.com/El-hadj10"><img src="https://img.shields.io/badge/GitHub-El--hadj10-181717?style=for-the-badge&logo=github" alt="GitHub" /></a>
+	<a href="https://github.com/El-hadj10/LUMA.STORE"><img src="https://img.shields.io/badge/Repo-LUMA.STORE-f59e0b?style=for-the-badge" alt="Repository" /></a>
+	<img src="https://img.shields.io/badge/Stack-FastAPI%20%7C%20Next.js%20%7C%20Agents-orange?style=for-the-badge" alt="Stack" />
+	<img src="https://img.shields.io/badge/Aura-Cyber%20Hardened-111827?style=for-the-badge" alt="Cyber Aura" />
+</p>
 
-- Fournisseur carto/routing : Mapbox (remplace Nominatim/OSRM)
-- Backend Node.js minimal (Express, proxy sécurisé, gestion clé API)
-- Frontend adapté pour requêter un backend distant via `VITE_API_BASE_URL`
-- Proxy Vite intégré dans `vite.config.ts` pour le dev local
-- Lint/build validés
+## FR / EN Snapshot
 
-Voir `backend/README.md` pour le déploiement backend.
+### FR
 
-### Prochaines étapes possibles
+Plateforme e-commerce IA qui automatise sourcing, scoring, pricing et publication avec une approche orientee marge, fiabilite et execution.
 
-- Ajouter authentification backend
-- Centraliser la config multi-fournisseur
-- Synchronisation utilisateur (favoris, historique)
+### EN
 
-## Scripts
+AI-native commerce platform that automates sourcing, scoring, pricing, and publishing with a margin-first, reliability-driven execution model.
+
+## Vision
+
+Luma.store est une architecture e-commerce pilotee par IA:
+
+- Sourcing produits multi-marketplaces
+- Evaluation automatique par score business
+- Pricing dynamique avec contraintes de marge
+- Publication guidee vers une vitrine moderne
+
+## Manifesto
+
+Transformer un catalogue en machine de croissance:
+
+- Data d'abord
+- Marge controlee
+- Vitesse d'execution
+- Qualite editoriale
+- Boucle d'amelioration continue
+
+## Philosophie
+
+- Lumiere: experience client claire, rapide, elegante.
+- Ombre: resilience technique, monitoring, securite.
+- Ordre: architecture modulaire et agents specialises.
+
+## Architecture
+
+| Module | Role |
+|---|---|
+| `agents/` | Orchestration IA (copywriting, pricing, scoring, sourcing, growth) |
+| `api/` | FastAPI, auth, produits, commandes, webhooks |
+| `connectors/` | Integrations Amazon, eBay, AliExpress |
+| `frontend/` | Next.js 14, experience boutique complete |
+| `database/` | Schemas SQL et migrations |
+| `infrastructure/` | Docker Compose, Nginx, orchestration |
+| `shared/` | Constantes et schemas partages |
+
+## Agents IA
+
+- Sourcing Agent: detecte les offres pertinentes
+- Scoring Agent: filtre par qualite, note et potentiel
+- Pricing Agent: calcule les prix cibles et marges
+- Copywriter Agent: genere titres et descriptions
+- Growth Agent: propose des optimisations conversion
+- Customer Service Agent: prepare les reponses support
+
+## Execution Loop
+
+1. Sourcer des offres multi-marketplaces.
+2. Evaluer via score, marge et fiabilite.
+3. Re-pricer selon objectifs business.
+4. Generer fiches produit et assets texte.
+5. Publier puis monitorer les signaux de performance.
+
+## Tech Arsenal
+
+- Frontend: Next.js 14, TypeScript
+- Backend: FastAPI, SQLAlchemy, Pydantic
+- IA: orchestration multi-agents Python
+- Data: PostgreSQL, Redis, Celery
+- Infra: Docker Compose, Nginx, CI/CD
+
+## GitHub Pulse
+
+<p align="center">
+	<img height="170" src="https://github-readme-stats.vercel.app/api?username=El-hadj10&show_icons=true&theme=transparent&title_color=f59e0b&icon_color=f59e0b&text_color=cbd5e1&border_color=334155" alt="GitHub Stats" />
+	<img height="170" src="https://github-readme-stats.vercel.app/api/top-langs/?username=El-hadj10&layout=compact&theme=transparent&title_color=f59e0b&text_color=cbd5e1&border_color=334155" alt="Top Languages" />
+</p>
+
+## Quick Start
 
 ```bash
+docker compose -f infrastructure/docker-compose.yml up postgres redis -d
+
+cd api
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+
+cd ../frontend
 npm install
 npm run dev
-npm run build
-npm run lint
-npm run backend:start
 ```
 
-## Demarrage
+- Frontend: http://localhost:3000
+- API docs: http://localhost:8000/docs
 
-1. Installer les dependances avec `npm install`.
-2. Lancer le backend avec `npm run backend:start`.
-3. Lancer le serveur de developpement avec `npm run dev`.
-4. Ouvrir `http://localhost:5173/nav-starter/`.
+## Status 2026-05-03
 
-## Debug et lancement
+- Backend et agents operationnels
+- Frontend Next.js refondu sur les pages critiques
+- CI/CD et deploiement pages en place
+- Prochain bloc: migrations Alembic + KPIs reels admin
 
-- Pour lancer le projet en local, utilisez `npm run dev` ou la tache VS Code `dev server`.
-- Pour verifier la production, utilisez `npm run build` puis `npm run preview`.
-- Le projet peut etre debugge depuis VS Code avec la configuration `Launch nav-starter`.
+## Roadmap 30 Jours
 
-## Installation sur telephone
+1. Finaliser pipeline Alembic (revision + upgrade head).
+2. Brancher KPIs admin sur donnees API reelles.
+3. Completer la signature AWS SigV4 cote Amazon.
+4. Ajouter tests API critiques (pricing, orders, products).
+5. Renforcer logs agents vers table dediee.
 
-- Android : ouvrez la version HTTPS de l'application dans Chrome puis utilisez le bouton d'installation ou le menu du navigateur.
-- iPhone : ouvrez la version HTTPS de l'application dans Safari puis utilisez Share > Add to Home Screen.
-- Le mode developpement local ne suffit pas pour un vrai test sur telephone via une IP locale, car le service worker et l'installation exigent un contexte securise HTTPS.
+## Documentation
 
-## Deploiement GitHub Pages
+- Architecture detaillee: [docs/architecture.md](docs/architecture.md)
+- Notes projet: [docs/README.md](docs/README.md)
+- Backend proxy nav: [backend/README.md](backend/README.md)
 
-- Le projet est configure avec `base: /nav-starter/` pour le depot GitHub `El-hadj10/nav-starter`.
-- Le workflow GitHub Actions dans `.github/workflows/deploy-pages.yml` publie automatiquement le dossier `dist` sur GitHub Pages apres un push sur `main`.
-- Ajouter la variable de repository GitHub Actions `VITE_API_BASE_URL` pointant vers l'URL publique du backend Render ou Railway.
-- Une fois le workflow execute et GitHub Pages active dans le depot, l'URL attendue est `https://el-hadj10.github.io/nav-starter/`.
+## Profil Alternatif
 
-## Structure utile
+- Version profil personnelle: [GITHUB_PROFILE_README.md](GITHUB_PROFILE_README.md)
 
-- `src/App.tsx` contient l'experience mobile, la recherche, les favoris persistants, l'historique recent, la geolocalisation navigateur et les appels de geocodage/routage.
-- `src/App.css` contient la mise en page type application et les composants interactifs.
-- `public/manifest.webmanifest` decrit l'application installable.
-- `public/service-worker.js` gere le cache hors ligne de base.
-- `docs/README.md` centralise la documentation du projet.
+## Auteur
 
-## Services utilises
+Nour (El-hadj10) - Full-Stack Developer and Cybersecurity Enthusiast
 
-- Recherche distante : Mapbox Geocoding API via backend proxy.
-- Routage route et marche : Mapbox Directions API via backend proxy.
-- En cas d'echec reseau, l'application conserve un fallback local estime.
-
-## Depot GitHub
-
-Le depot cible est : [https://github.com/El-hadj10/nav-starter](https://github.com/El-hadj10/nav-starter)
+<p align="center">
+	<img src="https://capsule-render.vercel.app/api?type=rect&height=120&color=0:111827,100:1f2937&text=Build%20in%20light.%20Harden%20in%20shadow.&fontColor=f59e0b&fontSize=24" alt="Signature" />
+</p>
