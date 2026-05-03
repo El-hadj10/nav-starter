@@ -1,115 +1,85 @@
-<h1 align="center">Nour | El-hadj10</h1>
+<h1 align="center">Nour · El-hadj10</h1>
 
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=venom&height=220&color=0:0f172a,100:1e293b&text=Builder%20of%20Luma.store&fontColor=f59e0b&fontAlignY=36&desc=Full-Stack%20x%20Cybersecurity%20Mindset&descAlignY=58" alt="Profile Banner" />
+  <img src="https://capsule-render.vercel.app/api?type=venom&height=220&color=0:0f172a,100:1e293b&text=Full-Stack%20%26%20Cybersecurity&fontColor=0ea5e9&fontAlignY=36&desc=I%20build%20things%20that%20work%2C%20then%20harden%20them.&descAlignY=58&descColor=cbd5e1" alt="Profile Banner" />
 </p>
 
 <p align="center">
-  <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=19&pause=1000&color=F59E0B&center=true&vCenter=true&width=820&lines=I+design+systems+that+sell+and+scale.;Python+%7C+FastAPI+%7C+Next.js+%7C+Agents+%7C+Security;From+idea+to+production+with+structure+and+clarity." alt="Typing Banner" />
+  <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=19&pause=1000&color=0EA5E9&center=true&vCenter=true&width=820&lines=Python+%7C+FastAPI+%7C+React+%7C+Next.js+%7C+Security;From+idea+to+production+with+structure+%26+clarity.;Navigation+apps%2C+AI+commerce%2C+and+more." alt="Typing Banner" />
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Role-Full--Stack%20Developer-f59e0b?style=for-the-badge" alt="Role" />
-  <img src="https://img.shields.io/badge/Focus-AI%20Commerce-0ea5e9?style=for-the-badge" alt="Focus" />
-  <img src="https://img.shields.io/badge/Approach-Architecture%20First-111827?style=for-the-badge" alt="Approach" />
-  <img src="https://img.shields.io/badge/Posture-Secure%20by%20Design-1f2937?style=for-the-badge" alt="Posture" />
+  <img src="https://img.shields.io/badge/Role-Full--Stack%20Developer-0ea5e9?style=for-the-badge" alt="Role" />
+  <img src="https://img.shields.io/badge/Focus-Web%20%26%20Automation-6366f1?style=for-the-badge" alt="Focus" />
+  <img src="https://img.shields.io/badge/Posture-Secure%20by%20Design-111827?style=for-the-badge" alt="Posture" />
 </p>
 
-## FR / EN Pitch
+---
+
+## FR / EN
 
 ### FR
 
-Je construis des systemes utiles, lisibles et robustes, avec une execution rapide et une architecture qui tient dans le temps.
+Je construis des systemes utiles, lisibles et robustes, avec une execution rapide et une architecture qui tient dans le temps. Lumiere pour la clarte, Ombre pour la securite, Ordre pour l architecture.
 
 ### EN
 
-I build useful, readable, and robust systems with fast delivery and architecture that remains reliable over time.
+I build useful, readable, and robust systems — fast delivery, durable architecture. Light for clarity, Shadow for security, Order for structure.
 
-## Identity
+---
 
-- Name: Nour
-- GitHub: El-hadj10
-- Core profile: Full-Stack Developer and Cybersecurity Enthusiast
-- Theme: Lumiere (clarte), Ombre (securite), Ordre (architecture)
-
-## Signature
-
-Je construis des produits utiles, puis je les rends robustes:
+## Philosophie
 
 - Product sense pour livrer ce qui compte
 - Architecture claire pour scaler sans chaos
 - Reflexes securite pour durcir la surface
 - Execution rapide sans sacrifier la qualite
 
-## Featured Project
+---
 
-### Luma.store - AI-native Commerce Stack
+## Projets
 
-Luma.store est un systeme qui automatise toute la chaine e-commerce:
+### nav-starter — Mobile Navigation PWA
 
-- Detecter les meilleures offres
-- Evaluer le potentiel de vente
-- Calculer des prix robustes
-- Produire du contenu catalogue
-- Orchestrer publication et suivi
+Application de navigation installable (PWA) avec routage Mapbox, geocodage, geolocalisation, favoris, historique et support hors-ligne.
 
-## Technical Map
+- Stack : React 18, TypeScript, Vite, Node.js, Mapbox
+- Live : [el-hadj10.github.io/nav-starter](https://el-hadj10.github.io/nav-starter/)
+- Repo : [github.com/El-hadj10/nav-starter](https://github.com/El-hadj10/nav-starter)
 
-- Frontend: Next.js 14, TypeScript
-- API: FastAPI, Pydantic, SQLAlchemy
-- Agents: Python multi-agent orchestration
-- Data: PostgreSQL, Redis, Celery
-- Ops: Docker, Nginx, CI/CD
+### Luma.store — AI-native Commerce Stack
 
-## Core Specialties
+Plateforme e-commerce pilotee par IA : sourcing, scoring, pricing et publication automatises avec 6 agents specialises.
 
-- API design and domain modeling
-- Multi-agent orchestration and automation
-- Conversion-focused storefront engineering
-- Performance and reliability hardening
-- Secure integrations and key management
+- Stack : FastAPI, Next.js 14, PostgreSQL, Redis, Celery, Docker
+- Repo : [github.com/El-hadj10/LUMA.STORE](https://github.com/El-hadj10/LUMA.STORE)
 
-## Delivery Pipeline
+---
 
-1. Clarify constraints and target outcomes.
-2. Model entities, flows and edge cases.
-3. Ship MVP with clean contracts.
-4. Observe signals and remove bottlenecks.
-5. Iterate toward durable scale.
+## Tech Map
 
-## Current Priorities
+- **Frontend** : React, Next.js 14, TypeScript, Vite, Tailwind
+- **Backend** : FastAPI, SQLAlchemy, Pydantic, Node.js/Express
+- **IA / Automation** : Python multi-agent orchestration, OpenAI/Anthropic
+- **Data** : PostgreSQL, Redis, Celery
+- **Secu / Reseau** : Tor, Proxying, OSINT, OWASP
+- **Ops** : Docker, Nginx, GitHub Actions, CI/CD
 
-- Finaliser Alembic et migrations propres
-- Brancher des KPIs reels dans le dashboard admin
-- Completer Amazon connector (SigV4)
-- Ajouter des tests API critiques
+---
 
-## Quality Checklist
-
-- Explicit contracts between modules
-- Minimal hidden side effects
-- Predictable error paths
-- Measurable impact after each release
-
-## Working Principles
-
-- Write less but sharper code
-- Prefer explicit architecture over hidden magic
-- Keep products usable before making them clever
-- Security and reliability are product features
-
-## Links
-
-- Main repository profile README: [README.md](README.md)
-- Architecture details: [docs/architecture.md](docs/architecture.md)
-- Project docs: [docs/README.md](docs/README.md)
-
-## GitHub Metrics
+## GitHub Pulse
 
 <p align="center">
-  <img height="165" src="https://streak-stats.demolab.com?user=El-hadj10&theme=transparent&ring=f59e0b&fire=f59e0b&currStreakLabel=f59e0b&border=334155" alt="GitHub Streak" />
+  <img height="165" src="https://github-readme-stats.vercel.app/api?username=El-hadj10&show_icons=true&theme=transparent&title_color=0ea5e9&icon_color=0ea5e9&text_color=cbd5e1&border_color=334155" alt="GitHub Stats" />
+  <img height="165" src="https://github-readme-stats.vercel.app/api/top-langs/?username=El-hadj10&layout=compact&theme=transparent&title_color=0ea5e9&text_color=cbd5e1&border_color=334155" alt="Top Languages" />
 </p>
 
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=rect&height=110&color=0:f59e0b,100:ea580c&text=From%20idea%20to%20production%20with%20discipline.&fontColor=ffffff&fontSize=22" alt="Footer Banner" />
+  <img height="150" src="https://streak-stats.demolab.com?user=El-hadj10&theme=transparent&ring=0ea5e9&fire=0ea5e9&currStreakLabel=0ea5e9&border=334155" alt="GitHub Streak" />
+</p>
+
+---
+
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=rect&height=110&color=0:0f172a,100:1e293b&text=From%20idea%20to%20production%20with%20discipline.&fontColor=0ea5e9&fontSize=20" alt="Footer Banner" />
 </p>

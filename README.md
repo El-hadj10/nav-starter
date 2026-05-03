@@ -1,146 +1,106 @@
 
-# Luma.store
+# nav-starter
 
 <p align="center">
-	<img src="https://capsule-render.vercel.app/api?type=waving&height=220&color=0:f59e0b,100:f97316&text=Luma.store&fontAlignY=36&desc=AI%20Commerce%20Engine&descAlignY=56&fontColor=ffffff" alt="Luma Banner" />
+  <img src="https://capsule-render.vercel.app/api?type=waving&height=220&color=0:0ea5e9,100:6366f1&text=nav-starter&fontAlignY=36&desc=Mobile%20Navigation%20PWA&descAlignY=56&fontColor=ffffff" alt="nav-starter Banner" />
 </p>
 
 <p align="center">
-	<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=20&pause=900&color=F59E0B&center=true&vCenter=true&width=760&lines=Discover+%E2%86%92+Score+%E2%86%92+Price+%E2%86%92+Publish;Multi-agent+commerce+automation;FastAPI+%2B+Next.js+%2B+PostgreSQL+%2B+Redis" alt="Typing Intro" />
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=20&pause=900&color=0EA5E9&center=true&vCenter=true&width=760&lines=Search+%E2%86%92+Navigate+%E2%86%92+Arrive;React+%2B+TypeScript+%2B+Vite+PWA;Mapbox+%7C+Geolocation+%7C+Offline+Ready" alt="Typing Intro" />
 </p>
 
 <p align="center">
-	<a href="https://github.com/El-hadj10"><img src="https://img.shields.io/badge/GitHub-El--hadj10-181717?style=for-the-badge&logo=github" alt="GitHub" /></a>
-	<a href="https://github.com/El-hadj10/LUMA.STORE"><img src="https://img.shields.io/badge/Repo-LUMA.STORE-f59e0b?style=for-the-badge" alt="Repository" /></a>
-	<img src="https://img.shields.io/badge/Stack-FastAPI%20%7C%20Next.js%20%7C%20Agents-orange?style=for-the-badge" alt="Stack" />
-	<img src="https://img.shields.io/badge/Aura-Cyber%20Hardened-111827?style=for-the-badge" alt="Cyber Aura" />
+  <a href="https://github.com/El-hadj10"><img src="https://img.shields.io/badge/GitHub-El--hadj10-181717?style=for-the-badge&logo=github" alt="GitHub" /></a>
+  <a href="https://el-hadj10.github.io/nav-starter/"><img src="https://img.shields.io/badge/Live-GitHub%20Pages-0ea5e9?style=for-the-badge" alt="Live" /></a>
+  <img src="https://img.shields.io/badge/Stack-React%20%7C%20Vite%20%7C%20TypeScript-6366f1?style=for-the-badge" alt="Stack" />
+  <img src="https://img.shields.io/badge/PWA-Installable-111827?style=for-the-badge" alt="PWA" />
 </p>
 
 ## FR / EN Snapshot
 
 ### FR
 
-Plateforme e-commerce IA qui automatise sourcing, scoring, pricing et publication avec une approche orientee marge, fiabilite et execution.
+Application mobile de navigation installable (PWA) — recherche de destinations, routage via Mapbox, favoris persistants et support hors-ligne.
 
 ### EN
 
-AI-native commerce platform that automates sourcing, scoring, pricing, and publishing with a margin-first, reliability-driven execution model.
+Installable mobile navigation PWA — destination search, Mapbox-powered routing, persistent favorites and offline support.
 
-## Vision
+## Fonctionnalites
 
-Luma.store est une architecture e-commerce pilotee par IA:
-
-- Sourcing produits multi-marketplaces
-- Evaluation automatique par score business
-- Pricing dynamique avec contraintes de marge
-- Publication guidee vers une vitrine moderne
-
-## Manifesto
-
-Transformer un catalogue en machine de croissance:
-
-- Data d'abord
-- Marge controlee
-- Vitesse d'execution
-- Qualite editoriale
-- Boucle d'amelioration continue
-
-## Philosophie
-
-- Lumiere: experience client claire, rapide, elegante.
-- Ombre: resilience technique, monitoring, securite.
-- Ordre: architecture modulaire et agents specialises.
+- Recherche de destinations par nom, zone ou categorie
+- Routage voiture, transport en commun et marche (Mapbox Directions)
+- Geocodage distant via Mapbox Geocoding
+- Geolocalisation navigateur pour recalcul ETA en temps reel
+- Favoris et historique recent persistes en localStorage
+- Installation mobile (PWA) — Android Chrome et iOS Safari
+- Backend Node.js proxy securise (cle API jamais exposee cote client)
+- Fallback estime si le service de routage ne repond pas
 
 ## Architecture
 
-| Module | Role |
-|---|---|
-| `agents/` | Orchestration IA (copywriting, pricing, scoring, sourcing, growth) |
-| `api/` | FastAPI, auth, produits, commandes, webhooks |
-| `connectors/` | Integrations Amazon, eBay, AliExpress |
-| `frontend/` | Next.js 14, experience boutique complete |
-| `database/` | Schemas SQL et migrations |
-| `infrastructure/` | Docker Compose, Nginx, orchestration |
-| `shared/` | Constantes et schemas partages |
-
-## Agents IA
-
-- Sourcing Agent: detecte les offres pertinentes
-- Scoring Agent: filtre par qualite, note et potentiel
-- Pricing Agent: calcule les prix cibles et marges
-- Copywriter Agent: genere titres et descriptions
-- Growth Agent: propose des optimisations conversion
-- Customer Service Agent: prepare les reponses support
-
-## Execution Loop
-
-1. Sourcer des offres multi-marketplaces.
-2. Evaluer via score, marge et fiabilite.
-3. Re-pricer selon objectifs business.
-4. Generer fiches produit et assets texte.
-5. Publier puis monitorer les signaux de performance.
-
-## Tech Arsenal
-
-- Frontend: Next.js 14, TypeScript
-- Backend: FastAPI, SQLAlchemy, Pydantic
-- IA: orchestration multi-agents Python
-- Data: PostgreSQL, Redis, Celery
-- Infra: Docker Compose, Nginx, CI/CD
-
-## GitHub Pulse
-
-<p align="center">
-	<img height="170" src="https://github-readme-stats.vercel.app/api?username=El-hadj10&show_icons=true&theme=transparent&title_color=f59e0b&icon_color=f59e0b&text_color=cbd5e1&border_color=334155" alt="GitHub Stats" />
-	<img height="170" src="https://github-readme-stats.vercel.app/api/top-langs/?username=El-hadj10&layout=compact&theme=transparent&title_color=f59e0b&text_color=cbd5e1&border_color=334155" alt="Top Languages" />
-</p>
+| Couche | Technologie | Role |
+|---|---|---|
+| Frontend | React 18 + TypeScript + Vite | Interface mobile, logique navigation |
+| Styles | CSS custom | Mise en page type application native |
+| Backend | Node.js + Express | Proxy securise Mapbox |
+| PWA | manifest + service worker | Installation et cache hors-ligne |
+| CI/CD | GitHub Actions | Build et deploy automatiques sur GitHub Pages |
 
 ## Quick Start
 
 ```bash
-docker compose -f infrastructure/docker-compose.yml up postgres redis -d
-
-cd api
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
-
-cd ../frontend
+# Dependances
 npm install
+
+# Variables d environnement backend
+cp .env.example .env
+# Renseigner MAPBOX_TOKEN et ALLOWED_ORIGINS dans .env
+
+# Lancer le backend proxy
+npm run backend:start
+
+# Lancer le frontend en dev
 npm run dev
 ```
 
-- Frontend: http://localhost:3000
-- API docs: http://localhost:8000/docs
+Frontend local : `http://localhost:5173/nav-starter/`
 
-## Status 2026-05-03
+## Build et deploiement
 
-- Backend et agents operationnels
-- Frontend Next.js refondu sur les pages critiques
-- CI/CD et deploiement pages en place
-- Prochain bloc: migrations Alembic + KPIs reels admin
+```bash
+npm run build    # production dans dist/
+npm run preview  # verifier le build en local
+```
 
-## Roadmap 30 Jours
+- Deploiement automatique sur **GitHub Pages** via `.github/workflows/deploy-pages.yml`
+- URL live : `https://el-hadj10.github.io/nav-starter/`
+- Variable GitHub Actions requise : `VITE_API_BASE_URL` → URL publique du backend (Render ou Railway)
 
-1. Finaliser pipeline Alembic (revision + upgrade head).
-2. Brancher KPIs admin sur donnees API reelles.
-3. Completer la signature AWS SigV4 cote Amazon.
-4. Ajouter tests API critiques (pricing, orders, products).
-5. Renforcer logs agents vers table dediee.
+## Backend (proxy Mapbox)
 
-## Documentation
+| Endpoint | Description |
+|---|---|
+| `GET /health` | Verification disponibilite |
+| `GET /api/geocode?q=adresse` | Geocodage Mapbox |
+| `GET /api/route?from=lon,lat&to=lon,lat&profile=driving\|walking` | Routage Mapbox |
 
-- Architecture detaillee: [docs/architecture.md](docs/architecture.md)
-- Notes projet: [docs/README.md](docs/README.md)
-- Backend proxy nav: [backend/README.md](backend/README.md)
+Voir [backend/README.md](backend/README.md) pour le deploiement Render/Railway.
 
-## Profil Alternatif
+## Debug VS Code
 
-- Version profil personnelle: [GITHUB_PROFILE_README.md](GITHUB_PROFILE_README.md)
+- Tache : `dev server` (menu Terminal > Run Task)
+- Lancement debug : configuration `Launch nav-starter`
+- Build + lint : `npm run build && npm run lint`
+
+## Profil
+
+- README profil personnel : [GITHUB_PROFILE_README.md](GITHUB_PROFILE_README.md)
 
 ## Auteur
 
-Nour (El-hadj10) - Full-Stack Developer and Cybersecurity Enthusiast
+Nour (El-hadj10) — Full-Stack Developer & Cybersecurity Enthusiast
 
 <p align="center">
-	<img src="https://capsule-render.vercel.app/api?type=rect&height=120&color=0:111827,100:1f2937&text=Build%20in%20light.%20Harden%20in%20shadow.&fontColor=f59e0b&fontSize=24" alt="Signature" />
+  <img src="https://capsule-render.vercel.app/api?type=rect&height=110&color=0:0f172a,100:1e293b&text=Build%20in%20light.%20Harden%20in%20shadow.&fontColor=0ea5e9&fontSize=22" alt="Signature" />
 </p>
