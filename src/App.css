@@ -1,3 +1,13 @@
+
+/*
+  nav-starter - App.css
+  Styles principaux pour l’application, incluant :
+  - accessibilité (.sr-only)
+  - layout responsive
+  - composants UI (cartes, boutons, panneaux...)
+  - couleurs et thèmes
+*/
+
 .sr-only {
   position: absolute;
   width: 1px;
