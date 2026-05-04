@@ -1,81 +1,76 @@
-<h1 align="center">Nour · El-hadj10</h1>
+<h1 align="center">Nour — El-hadj10</h1>
 
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&height=200&color=0:0f172a,100:0ea5e9&text=Nour%20El-hadj10&fontColor=ffffff&fontAlignY=40&fontSize=40" alt="Profile Banner" />
+  <b>Full-Stack Developer · Cybersecurity Enthusiast</b><br/>
+  <i>Light for clarity · Shadow for security · Order for structure</i>
 </p>
 
 <p align="center">
-  <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=19&pause=1000&color=0EA5E9&center=true&vCenter=true&width=820&lines=Python+%7C+FastAPI+%7C+React+%7C+Next.js+%7C+Security;From+idea+to+production+with+structure+%26+clarity.;Navigation+apps%2C+AI+commerce%2C+and+more." alt="Typing Banner" />
+  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
+  <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js" />
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+</p>
+
+---
+
+## About
+
+I build useful, readable, and robust systems — fast delivery, durable architecture.
+
+- Product sense to ship what matters
+- Clean architecture to scale without chaos
+- Security reflexes to harden the surface
+- Fast execution without cutting corners
+
+---
+
+## Featured Projects
+
+### [nav-starter](https://github.com/El-hadj10/nav-starter) — Mobile Navigation PWA
+
+Installable navigation app (PWA) with Mapbox routing, geocoding, geolocation, favorites, history, and offline support.
+
+`React 18` `TypeScript` `Vite` `Node.js` `Mapbox` · [Live →](https://el-hadj10.github.io/nav-starter/)
+
+---
+
+### [LUMA.STORE](https://github.com/El-hadj10/LUMA.STORE) — AI-native Commerce Stack
+
+E-commerce platform driven by AI: automated sourcing, scoring, pricing, and publishing with 6 specialized agents.
+
+`FastAPI` `Next.js 14` `PostgreSQL` `Redis` `Celery` `Docker`
+
+---
+
+## Tech Stack
+
+| Domain | Tools |
+|---|---|
+| **Frontend** | React, Next.js 14, TypeScript, Vite, Tailwind |
+| **Backend** | FastAPI, SQLAlchemy, Pydantic, Node.js/Express |
+| **AI / Automation** | Python multi-agent, OpenAI, Anthropic |
+| **Data** | PostgreSQL, Redis, Celery |
+| **Security** | Tor, Proxying, OSINT, OWASP |
+| **Ops** | Docker, Nginx, GitHub Actions, CI/CD |
+
+---
+
+## GitHub Stats
+
+<p align="center">
+  <img src="https://github-profile-summary-cards.vercel.app/api/cards/stats?username=El-hadj10&theme=github_dark" alt="GitHub Stats" />
+  <img src="https://github-profile-summary-cards.vercel.app/api/cards/repos-per-language?username=El-hadj10&theme=github_dark" alt="Top Languages" />
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Role-Full--Stack%20Developer-0ea5e9?style=for-the-badge" alt="Role" />
-  <img src="https://img.shields.io/badge/Focus-Web%20%26%20Automation-6366f1?style=for-the-badge" alt="Focus" />
-  <img src="https://img.shields.io/badge/Posture-Secure%20by%20Design-111827?style=for-the-badge" alt="Posture" />
+  <img src="https://streak-stats.demolab.com?user=El-hadj10&theme=tokyonight&hide_border=true" alt="GitHub Streak" />
 </p>
-
----
-
-## FR / EN
-
-### FR
-
-Je construis des systemes utiles, lisibles et robustes, avec une execution rapide et une architecture qui tient dans le temps. Lumiere pour la clarte, Ombre pour la securite, Ordre pour l architecture.
-
-### EN
-
-I build useful, readable, and robust systems — fast delivery, durable architecture. Light for clarity, Shadow for security, Order for structure.
-
----
-
-## Philosophie
-
-- Product sense pour livrer ce qui compte
-- Architecture claire pour scaler sans chaos
-- Reflexes securite pour durcir la surface
-- Execution rapide sans sacrifier la qualite
-
----
-
-## Projets
-
-### nav-starter — Mobile Navigation PWA
-
-Application de navigation installable (PWA) avec routage Mapbox, geocodage, geolocalisation, favoris, historique et support hors-ligne.
-
-- Stack : React 18, TypeScript, Vite, Node.js, Mapbox
-- Live : [el-hadj10.github.io/nav-starter](https://el-hadj10.github.io/nav-starter/)
-- Repo : [github.com/El-hadj10/nav-starter](https://github.com/El-hadj10/nav-starter)
-
-### Luma.store — AI-native Commerce Stack
-
-Plateforme e-commerce pilotee par IA : sourcing, scoring, pricing et publication automatises avec 6 agents specialises.
-
-- Stack : FastAPI, Next.js 14, PostgreSQL, Redis, Celery, Docker
-- Repo : [github.com/El-hadj10/LUMA.STORE](https://github.com/El-hadj10/LUMA.STORE)
-
----
-
-## Tech Map
-
-- **Frontend** : React, Next.js 14, TypeScript, Vite, Tailwind
-- **Backend** : FastAPI, SQLAlchemy, Pydantic, Node.js/Express
-- **IA / Automation** : Python multi-agent orchestration, OpenAI/Anthropic
-- **Data** : PostgreSQL, Redis, Celery
-- **Secu / Reseau** : Tor, Proxying, OSINT, OWASP
-- **Ops** : Docker, Nginx, GitHub Actions, CI/CD
-
----
-
-## GitHub Pulse
-
-![GitHub Stats](https://github-profile-summary-cards.vercel.app/api/cards/stats?username=El-hadj10&theme=github_dark)
-![Top Languages](https://github-profile-summary-cards.vercel.app/api/cards/repos-per-language?username=El-hadj10&theme=github_dark)
-
-![GitHub Streak](https://streak-stats.demolab.com?user=El-hadj10&theme=tokyonight)
 
 ---
 
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=rect&height=110&color=0:0f172a,100:1e293b&text=From%20idea%20to%20production%20with%20discipline.&fontColor=0ea5e9&fontSize=20" alt="Footer Banner" />
+  <i>From idea to production — with discipline.</i>
 </p>
