@@ -10,6 +10,9 @@ Ce backend sert de proxy sécurisé pour les appels aux APIs de géocodage et de
 MAPBOX_TOKEN=VOTRE_CLE_API
 ALLOWED_ORIGINS=https://el-hadj10.github.io,http://localhost:5173
 PORT=4000
+JWT_SECRET=change-this-in-production
+DEMO_USER_EMAIL=demo@navstarter.dev
+DEMO_USER_PASSWORD=NavStarter123!
 ```
 
 1. Installer les dépendances à la racine du projet :
@@ -27,6 +30,8 @@ npm run backend:start
 ## Endpoints utiles
 
 - `/health` : vérification simple de disponibilité
+- `POST /api/auth/login` : authentification demo (JWT)
+- `GET /api/auth/session` : validation de session JWT (Bearer token)
 - `/api/geocode?q=adresse` : proxy vers Mapbox Geocoding
 - `/api/route?from=lon,lat&to=lon,lat&profile=driving|walking` : proxy vers Mapbox Directions
 

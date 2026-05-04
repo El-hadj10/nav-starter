@@ -1,23 +1,30 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { FormEvent } from 'react'
+import mapboxgl from 'mapbox-gl'
 import './App.css'
+import { formatClock, computeDistanceKm, computeLiveEta } from './lib/navigation'
+import { type Locale, messages } from './lib/i18n'
 
 type TabId = 'discover' | 'journeys' | 'saved' | 'profile'
 type TravelMode = 'drive' | 'transit' | 'walk'
+type SearchStatus = 'idle' | 'loading' | 'ready' | 'error'
+type RouteStatus = 'idle' | 'loading' | 'ready' | 'error'
+type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'error'
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>
 }
 
+type Coordinates = {
+  latitude: number
+  longitude: number
+}
+
 type RouteStep = {
   title: string
   detail: string
   baseMinuteOffset: number
-}
-
-type Coordinates = {
-  latitude: number
-  longitude: number
 }
 
 type SearchResult = {
@@ -27,13 +34,12 @@ type SearchResult = {
   coordinates: Coordinates
 }
 
-type SearchStatus = 'idle' | 'loading' | 'ready' | 'error'
-
 type RouteMetrics = {
   distanceKm: number
   durationMinutes: number
-  steps: RouteStep[]
   source: 'live' | 'estimated'
+  steps: RouteStep[]
+  geometry: [number, number][]
 }
 
 type Destination = {
@@ -42,68 +48,49 @@ type Destination = {
   area: string
   tag: string
   description: string
-  distanceKm: number
   traffic: 'Low' | 'Moderate' | 'Heavy'
   parking: string
-  etaByMode: Record<TravelMode, number>
   offlinePack: string
   coordinates: Coordinates
-  steps: RouteStep[]
+  baseSteps: RouteStep[]
 }
 
-// Base API configurable (dev/prod)
+type SessionUser = {
+  email: string
+  name: string
+}
+
 const configuredApiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/$/, '')
+const mapboxPublicToken = (import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN || '').trim()
 
-// Construit l’URL d’API selon l’environnement
-function buildApiUrl(pathname: string): URL {
-  if (configuredApiBaseUrl) {
-    return new URL(pathname, `${configuredApiBaseUrl}/`)
-  }
-  return new URL(pathname, window.location.origin)
-}
+const favoriteStorageKey = 'nav-starter.favorite-destinations'
+const historyStorageKey = 'nav-starter.recent-destinations'
+const tokenStorageKey = 'nav-starter.jwt'
+const localeStorageKey = 'nav-starter.locale'
 
-const tabs: Array<{ id: TabId; label: string; icon: string }> = [
-  { id: 'discover', label: 'Discover', icon: '◎' },
-  { id: 'journeys', label: 'Journeys', icon: '↗' },
-  { id: 'saved', label: 'Saved', icon: '★' },
-  { id: 'profile', label: 'Profile', icon: '◌' },
+const defaultOrigin: Coordinates = { latitude: 5.3207, longitude: -4.0161 }
+
+const travelModes: Array<{ id: TravelMode; labelKey: keyof (typeof messages)['fr'] }> = [
+  { id: 'drive', labelKey: 'modeDrive' },
+  { id: 'transit', labelKey: 'modeTransit' },
+  { id: 'walk', labelKey: 'modeWalk' },
 ]
 
-const travelModes: Array<{ id: TravelMode; label: string }> = [
-  { id: 'drive', label: 'Drive' },
-  { id: 'transit', label: 'Transit' },
-  { id: 'walk', label: 'Walk' },
-]
-
-const destinations: Destination[] = [
+const baseDestinations: Destination[] = [
   {
     id: 'marina-hub',
     name: 'Marina Hub',
     area: 'Lagoon District',
     tag: 'Work',
-    description: 'Fast waterfront route with monitored parking and low congestion.',
-    distanceKm: 12,
+    description: 'Fast waterfront corridor with consistent flow and monitored access.',
     traffic: 'Low',
     parking: '14 spots in Parking B',
-    etaByMode: { drive: 18, transit: 27, walk: 82 },
     offlinePack: 'Lagoon + Marina',
     coordinates: { latitude: 5.2905, longitude: -3.9876 },
-    steps: [
-      {
-        title: 'Leave Plateau',
-        detail: 'Head south on Coastal Avenue and stay on the express lane.',
-        baseMinuteOffset: 0,
-      },
-      {
-        title: 'Cross Harbor Bridge',
-        detail: 'Light traffic reported, keep right for Marina access.',
-        baseMinuteOffset: 8,
-      },
-      {
-        title: 'Arrive at Marina Hub',
-        detail: 'Entry gate B is the quickest entrance this morning.',
-        baseMinuteOffset: 18,
-      },
+    baseSteps: [
+      { title: 'Leave Plateau', detail: 'Head south on Coastal Avenue.', baseMinuteOffset: 0 },
+      { title: 'Cross Harbor Bridge', detail: 'Stay right for Marina access.', baseMinuteOffset: 9 },
+      { title: 'Arrive at Marina Hub', detail: 'Entry gate B is open.', baseMinuteOffset: 18 },
     ],
   },
   {
@@ -111,29 +98,15 @@ const destinations: Destination[] = [
     name: 'Canal Market',
     area: 'Old Port',
     tag: 'Food',
-    description: 'Compact route with dense activity and better access by transit.',
-    distanceKm: 8,
+    description: 'Dense but predictable urban route, better in transit at peak hours.',
     traffic: 'Moderate',
     parking: 'Street parking, average wait 6 min',
-    etaByMode: { drive: 21, transit: 16, walk: 54 },
     offlinePack: 'Port Core',
     coordinates: { latitude: 5.3162, longitude: -4.0154 },
-    steps: [
-      {
-        title: 'Take Riverside Boulevard',
-        detail: 'Road works on the west side, keep the center lane.',
-        baseMinuteOffset: 0,
-      },
-      {
-        title: 'Switch at Market Junction',
-        detail: 'Transit stop M2 is directly next to the main entrance.',
-        baseMinuteOffset: 9,
-      },
-      {
-        title: 'Arrive at Canal Market',
-        detail: 'Food hall opens fully at 09:00.',
-        baseMinuteOffset: 16,
-      },
+    baseSteps: [
+      { title: 'Take Riverside Boulevard', detail: 'Use center lane near market zone.', baseMinuteOffset: 0 },
+      { title: 'Switch at Market Junction', detail: 'Transit stop M2 is nearby.', baseMinuteOffset: 7 },
+      { title: 'Arrive at Canal Market', detail: 'Main hall opens at 09:00.', baseMinuteOffset: 16 },
     ],
   },
   {
@@ -141,233 +114,125 @@ const destinations: Destination[] = [
     name: 'Sunset Point',
     area: 'Cliffside',
     tag: 'Leisure',
-    description: 'Scenic route with slower curves but strong offline coverage.',
-    distanceKm: 19,
+    description: 'Scenic segment with stable fallback for offline guidance.',
     traffic: 'Moderate',
     parking: 'Scenic lot currently at 60% capacity',
-    etaByMode: { drive: 29, transit: 42, walk: 120 },
     offlinePack: 'Cliffside Trails',
     coordinates: { latitude: 5.3575, longitude: -3.9331 },
-    steps: [
-      {
-        title: 'Exit city ring',
-        detail: 'Take the eastern hill road and avoid the construction detour.',
-        baseMinuteOffset: 0,
-      },
-      {
-        title: 'Climb Ridge Pass',
-        detail: 'Visibility is clear, moderate curve density ahead.',
-        baseMinuteOffset: 13,
-      },
-      {
-        title: 'Reach Sunset Point',
-        detail: 'Best overlook is on the northern platform.',
-        baseMinuteOffset: 29,
-      },
+    baseSteps: [
+      { title: 'Exit city ring', detail: 'Use eastern hill road.', baseMinuteOffset: 0 },
+      { title: 'Climb Ridge Pass', detail: 'Moderate curves ahead.', baseMinuteOffset: 13 },
+      { title: 'Reach Sunset Point', detail: 'Northern platform has best view.', baseMinuteOffset: 29 },
     ],
   },
   {
     id: 'airport-gate',
-    name: 'Airport Gate',
+    name: 'Airport Gate C',
     area: 'North Terminal',
     tag: 'Travel',
-    description: 'Priority corridor with heavier traffic but predictable timing.',
-    distanceKm: 24,
+    description: 'Priority lane with stronger traffic variability during rush.',
     traffic: 'Heavy',
     parking: 'Drop-off only, gate C recommended',
-    etaByMode: { drive: 36, transit: 31, walk: 180 },
     offlinePack: 'Airport Ring',
     coordinates: { latitude: 5.2614, longitude: -3.9263 },
-    steps: [
-      {
-        title: 'Join northern expressway',
-        detail: 'Use lane 2 to bypass freight entry traffic.',
-        baseMinuteOffset: 0,
-      },
-      {
-        title: 'Pass cargo interchange',
-        detail: 'Delay pocket of around 5 minutes expected.',
-        baseMinuteOffset: 15,
-      },
-      {
-        title: 'Reach Airport Gate C',
-        detail: 'Pickup and drop-off lane is currently open.',
-        baseMinuteOffset: 31,
-      },
+    baseSteps: [
+      { title: 'Join northern expressway', detail: 'Take lane 2 for faster progression.', baseMinuteOffset: 0 },
+      { title: 'Pass cargo interchange', detail: 'Expect congestion pocket.', baseMinuteOffset: 15 },
+      { title: 'Reach Airport Gate C', detail: 'Drop-off lane is open.', baseMinuteOffset: 31 },
     ],
   },
 ]
 
-// Clés de stockage local pour favoris et historique
-const favoriteStorageKey = 'nav-starter.favorite-destinations'
-const historyStorageKey = 'nav-starter.recent-destinations'
-const defaultOrigin: Coordinates = { latitude: 5.3207, longitude: -4.0161 }
-
-// Lecture sécurisée du localStorage
-function readStoredIds(storageKey: string, fallback: string[]) {
-  if (typeof window === 'undefined') {
-    return fallback
+function buildApiUrl(pathname: string): URL {
+  if (configuredApiBaseUrl) {
+    return new URL(pathname, `${configuredApiBaseUrl}/`)
   }
+  return new URL(pathname, window.location.origin)
+}
+
+function readStoredIds(storageKey: string, fallback: string[]) {
   try {
-    const rawValue = window.localStorage.getItem(storageKey)
-    if (!rawValue) {
-      return fallback
-    }
-    const parsedValue = JSON.parse(rawValue)
-    if (!Array.isArray(parsedValue)) {
-      return fallback
-    }
-    return parsedValue.filter((entry): entry is string => typeof entry === 'string')
+    const raw = window.localStorage.getItem(storageKey)
+    if (!raw) return fallback
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return fallback
+    return parsed.filter((entry): entry is string => typeof entry === 'string')
   } catch {
     return fallback
   }
 }
 
-// Persistance dans le localStorage
-function persistIds(storageKey: string, values: string[]) {
-  window.localStorage.setItem(storageKey, JSON.stringify(values))
+function parseLocale(raw: string | null): Locale {
+  return raw === 'en' ? 'en' : 'fr'
 }
 
-function formatClock(offsetInMinutes: number) {
-  const now = new Date()
-  now.setMinutes(now.getMinutes() + offsetInMinutes)
-
-  return now.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
-function toRadians(value: number) {
-  return (value * Math.PI) / 180
-}
-
-function computeDistanceKm(origin: Coordinates, destination: Coordinates) {
-  const earthRadiusKm = 6371
-  const latitudeDelta = toRadians(destination.latitude - origin.latitude)
-  const longitudeDelta = toRadians(destination.longitude - origin.longitude)
-  const startLatitude = toRadians(origin.latitude)
-  const endLatitude = toRadians(destination.latitude)
-
-  const haversineValue =
-    Math.sin(latitudeDelta / 2) ** 2 +
-    Math.cos(startLatitude) *
-      Math.cos(endLatitude) *
-      Math.sin(longitudeDelta / 2) ** 2
-
-  const centralAngle = 2 * Math.atan2(Math.sqrt(haversineValue), Math.sqrt(1 - haversineValue))
-
-  return earthRadiusKm * centralAngle
-}
-
-function computeLiveEta(distanceKm: number, mode: TravelMode, traffic: Destination['traffic']) {
-  const trafficPenalty = traffic === 'Heavy' ? 1.28 : traffic === 'Moderate' ? 1.12 : 1
-
-  if (mode === 'walk') {
-    return Math.max(3, Math.round((distanceKm / 4.8) * 60))
-  }
-
-  if (mode === 'transit') {
-    return Math.max(5, Math.round((distanceKm / 26) * 60 + 6))
-  }
-
-  return Math.max(4, Math.round((distanceKm / 34) * 60 * trafficPenalty + 2))
-}
-
-function formatAreaLabel(origin: Coordinates) {
-  const nearestDestination = destinations.reduce((closest, destination) => {
-    if (!closest) {
-      return destination
-    }
-
-    const currentDistance = computeDistanceKm(origin, destination.coordinates)
-    const closestDistance = computeDistanceKm(origin, closest.coordinates)
-
-    return currentDistance < closestDistance ? destination : closest
-  }, destinations[0])
-
-  return `Near ${nearestDestination.area}`
-}
-
-function buildEstimatedSteps(destination: Destination): RouteStep[] {
+function estimatedSteps(destination: Destination, eta: number): RouteStep[] {
   return [
     {
       title: 'Leave current position',
-      detail: `Head toward ${destination.area} and stay on the fastest available corridor.`,
+      detail: `Head toward ${destination.area} using the fastest available corridor.`,
       baseMinuteOffset: 0,
     },
     {
       title: `Approach ${destination.name}`,
       detail: destination.description,
-      baseMinuteOffset: Math.max(4, Math.round(destination.etaByMode.drive * 0.55)),
+      baseMinuteOffset: Math.max(4, Math.round(eta * 0.55)),
     },
     {
       title: `Arrive at ${destination.name}`,
       detail: destination.parking,
-      baseMinuteOffset: destination.etaByMode.drive,
+      baseMinuteOffset: eta,
     },
   ]
 }
 
-function buildSearchDestination(result: SearchResult): Destination {
-  return {
-    id: result.id,
-    name: result.name,
-    area: result.area,
-    tag: 'Search',
-    description: 'Destination resolved from live OpenStreetMap geocoding.',
-    distanceKm: 1,
-    traffic: 'Moderate',
-    parking: 'Live parking details unavailable for this result',
-    etaByMode: { drive: 8, transit: 12, walk: 20 },
-    offlinePack: 'Online route only',
-    coordinates: result.coordinates,
-    steps: [
-      {
-        title: 'Leave current position',
-        detail: `Start route guidance toward ${result.name}.`,
-        baseMinuteOffset: 0,
-      },
-      {
-        title: `Approach ${result.area}`,
-        detail: 'Follow the fastest corridor suggested by the routing service.',
-        baseMinuteOffset: 6,
-      },
-      {
-        title: `Arrive at ${result.name}`,
-        detail: 'Check local access and final approach on arrival.',
-        baseMinuteOffset: 12,
-      },
-    ],
-  }
-}
-
 function App() {
-  // --- États principaux de l’application ---
-  const [activeTab, setActiveTab] = useState<TabId>('discover') // Tab actif
-  const [travelMode, setTravelMode] = useState<TravelMode>('drive') // Mode de transport
-  const [query, setQuery] = useState('') // Recherche utilisateur
-  const [selectedDestinationId, setSelectedDestinationId] = useState('marina-hub') // Destination sélectionnée
-  const [selectedSearchResult, setSelectedSearchResult] = useState<SearchResult | null>(null) // Résultat de recherche sélectionné
-  const [locationLabel, setLocationLabel] = useState('Lagoon District') // Libellé de localisation
-  const [locationState, setLocationState] = useState('GPS strong') // État GPS
-  const [currentCoordinates, setCurrentCoordinates] = useState<Coordinates | null>(null) // Coordonnées courantes
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]) // Résultats de recherche
-  const [searchStatus, setSearchStatus] = useState<SearchStatus>('idle') // Statut recherche
-  const [routeMetrics, setRouteMetrics] = useState<RouteMetrics | null>(null) // Infos de route
-  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null) // PWA install
-  const [isInstalled, setIsInstalled] = useState(false) // PWA installée
-  // Favoris et historique (persistés)
-  const [favoriteIds, setFavoriteIds] = useState<string[]>(() => readStoredIds(favoriteStorageKey, ['marina-hub', 'canal-market']))
+  const [locale, setLocale] = useState<Locale>(() => parseLocale(window.localStorage.getItem(localeStorageKey)))
+  const t = messages[locale]
+
+  const [activeTab, setActiveTab] = useState<TabId>('discover')
+  const [travelMode, setTravelMode] = useState<TravelMode>('drive')
+  const [query, setQuery] = useState('')
+  const [selectedDestinationId, setSelectedDestinationId] = useState('marina-hub')
+  const [selectedSearchResult, setSelectedSearchResult] = useState<SearchResult | null>(null)
+
+  const [locationLabel, setLocationLabel] = useState('Lagoon District')
+  const [locationState, setLocationState] = useState('GPS ready')
+  const [currentCoordinates, setCurrentCoordinates] = useState<Coordinates | null>(null)
+
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
+  const [searchStatus, setSearchStatus] = useState<SearchStatus>('idle')
+  const [searchError, setSearchError] = useState('')
+
+  const [routeMetrics, setRouteMetrics] = useState<RouteMetrics | null>(null)
+  const [routeStatus, setRouteStatus] = useState<RouteStatus>('idle')
+  const [routeError, setRouteError] = useState('')
+
+  const [favoriteIds, setFavoriteIds] = useState<string[]>(() => readStoredIds(favoriteStorageKey, ['marina-hub']))
   const [recentIds, setRecentIds] = useState<string[]>(() => readStoredIds(historyStorageKey, ['marina-hub']))
 
-  // Origine pour le calcul d’itinéraire
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+  const [isInstalled, setIsInstalled] = useState(false)
+
+  const [authStatus, setAuthStatus] = useState<AuthStatus>('idle')
+  const [authError, setAuthError] = useState('')
+  const [emailInput, setEmailInput] = useState('demo@navstarter.dev')
+  const [passwordInput, setPasswordInput] = useState('NavStarter123!')
+  const [token, setToken] = useState(() => window.localStorage.getItem(tokenStorageKey) || '')
+  const [sessionUser, setSessionUser] = useState<SessionUser | null>(null)
+
+  const mapNodeRef = useRef<HTMLDivElement | null>(null)
+  const mapRef = useRef<mapboxgl.Map | null>(null)
+  const originMarkerRef = useRef<mapboxgl.Marker | null>(null)
+  const destinationMarkerRef = useRef<mapboxgl.Marker | null>(null)
+  const [mapError, setMapError] = useState('')
+
   const routeOrigin = currentCoordinates ?? defaultOrigin
 
-  // Destinations enrichies avec calculs live
-  const liveDestinations = useMemo(() => destinations.map((destination) => {
+  const destinations = useMemo(() => baseDestinations.map((destination) => {
     const directDistanceKm = computeDistanceKm(routeOrigin, destination.coordinates)
     const routedDistanceKm = Math.max(1, Math.round(directDistanceKm * 1.18 * 10) / 10)
+
     return {
       ...destination,
       distanceKm: routedDistanceKm,
@@ -379,49 +244,151 @@ function App() {
     }
   }), [routeOrigin])
 
-  // Filtrage par recherche
-  const filteredDestinations = useMemo(() => liveDestinations.filter((destination) => {
-    const normalizedQuery = query.trim().toLowerCase()
-    if (!normalizedQuery) return true
-    return [destination.name, destination.area, destination.tag].join(' ').toLowerCase().includes(normalizedQuery)
-  }), [liveDestinations, query])
+  const filteredDestinations = useMemo(() => {
+    const normalized = query.trim().toLowerCase()
+    if (!normalized) return destinations
+    return destinations.filter((destination) =>
+      [destination.name, destination.area, destination.tag].join(' ').toLowerCase().includes(normalized),
+    )
+  }, [destinations, query])
 
-  // Destination sélectionnée (recherche ou liste)
-  const selectedDestination = useMemo(() =>
-    selectedSearchResult
-      ? buildSearchDestination(selectedSearchResult)
-      : (liveDestinations.find((destination) => destination.id === selectedDestinationId) ?? liveDestinations[0])
-  , [liveDestinations, selectedDestinationId, selectedSearchResult])
+  const selectedDestination = useMemo(() => {
+    if (selectedSearchResult) {
+      return {
+        id: selectedSearchResult.id,
+        name: selectedSearchResult.name,
+        area: selectedSearchResult.area,
+        tag: 'Search',
+        description: 'Destination resolved from online geocoding.',
+        traffic: 'Moderate' as const,
+        parking: 'Live parking details unavailable for this result',
+        offlinePack: 'Online route only',
+        coordinates: selectedSearchResult.coordinates,
+        baseSteps: [
+          { title: 'Leave current position', detail: `Start route guidance toward ${selectedSearchResult.name}.`, baseMinuteOffset: 0 },
+          { title: `Approach ${selectedSearchResult.area}`, detail: 'Follow live map guidance.', baseMinuteOffset: 6 },
+          { title: `Arrive at ${selectedSearchResult.name}`, detail: 'Check final approach nearby.', baseMinuteOffset: 12 },
+        ],
+        distanceKm: 1,
+        etaByMode: { drive: 8, transit: 12, walk: 20 },
+      }
+    }
 
-  // Favoris et historique enrichis
-  const favoriteDestinations = useMemo(() => liveDestinations.filter((destination) => favoriteIds.includes(destination.id)), [favoriteIds, liveDestinations])
-  const recentDestinations = useMemo(() => recentIds.map((id) => liveDestinations.find((destination) => destination.id === id)).filter((destination): destination is Destination => Boolean(destination)), [liveDestinations, recentIds])
+    return destinations.find((entry) => entry.id === selectedDestinationId) ?? destinations[0]
+  }, [destinations, selectedDestinationId, selectedSearchResult])
 
-  // Métriques d’itinéraire
+  const favoriteDestinations = useMemo(
+    () => destinations.filter((destination) => favoriteIds.includes(destination.id)),
+    [destinations, favoriteIds],
+  )
+
+  const recentDestinations = useMemo(
+    () =>
+      recentIds
+        .map((id) => destinations.find((destination) => destination.id === id))
+        .filter((destination): destination is (typeof destinations)[number] => Boolean(destination)),
+    [recentIds, destinations],
+  )
+
+  const shouldSearchOnline = query.trim().length >= 3
   const activeEta = routeMetrics?.durationMinutes ?? selectedDestination.etaByMode[travelMode]
   const arrivalTime = formatClock(activeEta)
-  const totalTrips = recentIds.length + 9
-  const savedMinutes = favoriteIds.length * 7 + recentIds.length * 4
-  const shouldSearchOnline = query.trim().length >= 3
-  const visibleSearchResults = shouldSearchOnline ? searchResults : []
-  const visibleSearchStatus = shouldSearchOnline ? searchStatus : 'idle'
 
-  // --- Effet : recherche géocodage Mapbox ---
+  const tabLabels = {
+    discover: t.tabDiscover,
+    journeys: t.tabJourneys,
+    saved: t.tabSaved,
+    profile: t.tabProfile,
+  }
+
+  useEffect(() => {
+    window.localStorage.setItem(localeStorageKey, locale)
+  }, [locale])
+
+  useEffect(() => {
+    window.localStorage.setItem(favoriteStorageKey, JSON.stringify(favoriteIds))
+  }, [favoriteIds])
+
+  useEffect(() => {
+    window.localStorage.setItem(historyStorageKey, JSON.stringify(recentIds))
+  }, [recentIds])
+
+  useEffect(() => {
+    if (!token) {
+      window.localStorage.removeItem(tokenStorageKey)
+      return
+    }
+    window.localStorage.setItem(tokenStorageKey, token)
+  }, [token])
+
+  useEffect(() => {
+    if (!token) {
+      return
+    }
+
+    const controller = new AbortController()
+
+    void (async () => {
+      setAuthStatus('loading')
+      setAuthError('')
+
+      try {
+        const endpoint = buildApiUrl('/api/auth/session')
+        const response = await fetch(endpoint.toString(), {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+        })
+
+        if (!response.ok) {
+          throw new Error('Session expired')
+        }
+
+        const payload = (await response.json()) as { user?: { sub?: string } }
+        setSessionUser({
+          email: payload.user?.sub || emailInput,
+          name: 'Demo Navigator',
+        })
+        setAuthStatus('authenticated')
+      } catch (error) {
+        if ((error as Error).name === 'AbortError') return
+        setAuthStatus('error')
+        setAuthError(t.authSessionExpired)
+        setToken('')
+        setSessionUser(null)
+      }
+    })()
+
+    return () => controller.abort()
+  }, [token, t.authSessionExpired, emailInput])
+
   useEffect(() => {
     const normalizedQuery = query.trim()
-    if (normalizedQuery.length < 3) return
+
+    if (normalizedQuery.length < 3) {
+      return
+    }
+
     const controller = new AbortController()
     const timeoutId = window.setTimeout(async () => {
       setSearchStatus('loading')
+      setSearchError('')
+
       try {
         const endpoint = buildApiUrl('/api/geocode')
         endpoint.searchParams.set('q', normalizedQuery)
+
         const response = await fetch(endpoint.toString(), {
           signal: controller.signal,
-          headers: { Accept: 'application/json' },
+          headers: {
+            Accept: 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
         })
-        if (!response.ok) throw new Error('Geocoding failed')
-        // Format Mapbox
+
+        if (!response.ok) {
+          throw new Error('Search failed')
+        }
+
         const payload = (await response.json()) as {
           features: Array<{
             id: string
@@ -431,6 +398,7 @@ function App() {
             context?: Array<{ text: string }>
           }>
         }
+
         const nextResults = payload.features.map((entry) => ({
           id: entry.id,
           name: entry.text,
@@ -440,140 +408,240 @@ function App() {
             longitude: entry.center[0],
           },
         }))
+
         setSearchResults(nextResults)
         setSearchStatus('ready')
       } catch (error) {
         if ((error as Error).name === 'AbortError') return
         setSearchResults([])
         setSearchStatus('error')
+        setSearchError(t.searchError)
       }
-    }, 350)
+    }, 360)
+
     return () => {
       controller.abort()
       window.clearTimeout(timeoutId)
     }
-  }, [query])
+  }, [query, token, t.searchError])
 
-  // --- Effet : calcul d’itinéraire (Mapbox Directions ou estimation) ---
   useEffect(() => {
+    const controller = new AbortController()
+
     const buildEstimatedRoute = () => {
-      const estimatedDistanceKm = Math.max(1, Math.round(computeDistanceKm(routeOrigin, selectedDestination.coordinates) * 1.18 * 10) / 10)
+      const eta = selectedDestination.etaByMode[travelMode]
+      const distance = Math.max(
+        1,
+        Math.round(computeDistanceKm(routeOrigin, selectedDestination.coordinates) * 1.18 * 10) / 10,
+      )
+
       setRouteMetrics({
-        distanceKm: estimatedDistanceKm,
-        durationMinutes: selectedDestination.etaByMode[travelMode],
-        steps: selectedDestination.steps.length ? selectedDestination.steps : buildEstimatedSteps(selectedDestination),
+        distanceKm: distance,
+        durationMinutes: eta,
         source: 'estimated',
+        steps: selectedDestination.baseSteps.length ? selectedDestination.baseSteps : estimatedSteps(selectedDestination, eta),
+        geometry: [
+          [routeOrigin.longitude, routeOrigin.latitude],
+          [selectedDestination.coordinates.longitude, selectedDestination.coordinates.latitude],
+        ],
       })
+      setRouteStatus('error')
+      setRouteError(t.routeFallback)
     }
+
     if (travelMode === 'transit') {
       buildEstimatedRoute()
       return
     }
-    const controller = new AbortController()
+
     void (async () => {
+      setRouteStatus('loading')
+      setRouteError('')
+
       try {
         const profile = travelMode === 'walk' ? 'walking' : 'driving'
-        const from = `${routeOrigin.longitude},${routeOrigin.latitude}`
-        const to = `${selectedDestination.coordinates.longitude},${selectedDestination.coordinates.latitude}`
         const endpoint = buildApiUrl('/api/route')
-        endpoint.searchParams.set('from', from)
-        endpoint.searchParams.set('to', to)
+        endpoint.searchParams.set('from', `${routeOrigin.longitude},${routeOrigin.latitude}`)
+        endpoint.searchParams.set('to', `${selectedDestination.coordinates.longitude},${selectedDestination.coordinates.latitude}`)
         endpoint.searchParams.set('profile', profile)
+
         const response = await fetch(endpoint.toString(), {
           signal: controller.signal,
-          headers: { Accept: 'application/json' },
+          headers: {
+            Accept: 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
         })
-        if (!response.ok) throw new Error('Routing failed')
-        // Format Mapbox Directions
+
+        if (!response.ok) {
+          throw new Error('Routing failed')
+        }
+
         const payload = (await response.json()) as {
           routes?: Array<{
             distance: number
             duration: number
+            geometry?: { coordinates: [number, number][] }
             legs?: Array<{
-              steps?: Array<{
-                maneuver?: { instruction?: string; type?: string; modifier?: string }
-                name: string
-              }>
+              steps?: Array<{ maneuver?: { instruction?: string; type?: string }; name: string }>
             }>
           }>
         }
+
         const route = payload.routes?.[0]
-        if (!route) throw new Error('No route')
-        const stepList = route.legs?.[0]?.steps?.slice(0, 3).map((step, index) => ({
+        if (!route) {
+          throw new Error('No route')
+        }
+
+        const steps = route.legs?.[0]?.steps?.slice(0, 4).map((step, index) => ({
           title: step.maneuver?.instruction || step.name || `Step ${index + 1}`,
-          detail: step.name || step.maneuver?.type || 'Continue on the suggested route.',
+          detail: step.name || step.maneuver?.type || 'Continue on suggested route.',
           baseMinuteOffset: Math.round((route.duration / 60 / 3) * index),
         })) ?? []
+
+        const geometry: [number, number][] = route.geometry?.coordinates && route.geometry.coordinates.length >= 2
+          ? route.geometry.coordinates.map(([lng, lat]) => [lng, lat] as [number, number])
+          : [
+              [routeOrigin.longitude, routeOrigin.latitude],
+              [selectedDestination.coordinates.longitude, selectedDestination.coordinates.latitude],
+            ]
+
         setRouteMetrics({
           distanceKm: Math.max(1, Math.round((route.distance / 1000) * 10) / 10),
           durationMinutes: Math.max(1, Math.round(route.duration / 60)),
-          steps: stepList.length ? stepList : buildEstimatedSteps(selectedDestination),
           source: 'live',
+          steps: steps.length ? steps : estimatedSteps(selectedDestination, selectedDestination.etaByMode[travelMode]),
+          geometry,
         })
+        setRouteStatus('ready')
       } catch (error) {
         if ((error as Error).name === 'AbortError') return
         buildEstimatedRoute()
       }
     })()
-    return () => {
-      controller.abort()
-    }
-  }, [routeOrigin, selectedDestination, travelMode])
+
+    return () => controller.abort()
+  }, [routeOrigin, selectedDestination, travelMode, token, t.routeFallback])
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(display-mode: standalone)')
 
-    const updateInstalledState = () => {
-      const navigatorWithStandalone = navigator as Navigator & {
-        standalone?: boolean
-      }
-
-      setIsInstalled(
-        mediaQuery.matches || navigatorWithStandalone.standalone === true,
-      )
+    const updateInstalled = () => {
+      const nav = navigator as Navigator & { standalone?: boolean }
+      setIsInstalled(mediaQuery.matches || nav.standalone === true)
     }
 
-    const handleBeforeInstallPrompt = (event: Event) => {
+    const onPrompt = (event: Event) => {
       event.preventDefault()
       setInstallPrompt(event as BeforeInstallPromptEvent)
     }
 
-    const handleInstalled = () => {
+    const onInstalled = () => {
       setInstallPrompt(null)
       setIsInstalled(true)
     }
 
-    updateInstalledState()
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-    window.addEventListener('appinstalled', handleInstalled)
-    mediaQuery.addEventListener('change', updateInstalledState)
+    updateInstalled()
+    window.addEventListener('beforeinstallprompt', onPrompt)
+    window.addEventListener('appinstalled', onInstalled)
+    mediaQuery.addEventListener('change', updateInstalled)
 
     return () => {
-      window.removeEventListener(
-        'beforeinstallprompt',
-        handleBeforeInstallPrompt,
-      )
-      window.removeEventListener('appinstalled', handleInstalled)
-      mediaQuery.removeEventListener('change', updateInstalledState)
+      window.removeEventListener('beforeinstallprompt', onPrompt)
+      window.removeEventListener('appinstalled', onInstalled)
+      mediaQuery.removeEventListener('change', updateInstalled)
     }
   }, [])
 
   useEffect(() => {
-    persistIds(favoriteStorageKey, favoriteIds)
-  }, [favoriteIds])
-
-  useEffect(() => {
-    persistIds(historyStorageKey, recentIds)
-  }, [recentIds])
-
-  const handleInstall = async () => {
-    if (!installPrompt) {
+    if (!mapNodeRef.current || mapRef.current) {
       return
     }
 
+    if (!mapboxPublicToken) {
+      return
+    }
+
+    mapboxgl.accessToken = mapboxPublicToken
+    const map = new mapboxgl.Map({
+      container: mapNodeRef.current,
+      style: 'mapbox://styles/mapbox/navigation-night-v1',
+      center: [routeOrigin.longitude, routeOrigin.latitude],
+      zoom: 11,
+      attributionControl: false,
+    })
+
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: true }), 'top-right')
+    mapRef.current = map
+
+    map.on('error', () => {
+      setMapError(t.mapLoadFailed)
+    })
+
+    return () => {
+      originMarkerRef.current?.remove()
+      destinationMarkerRef.current?.remove()
+      map.remove()
+      mapRef.current = null
+    }
+  }, [routeOrigin.latitude, routeOrigin.longitude, t.mapLoadFailed, t.mapTokenMissing])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !routeMetrics) {
+      return
+    }
+
+    const originLngLat: [number, number] = [routeOrigin.longitude, routeOrigin.latitude]
+    const destinationLngLat: [number, number] = [selectedDestination.coordinates.longitude, selectedDestination.coordinates.latitude]
+
+    if (!originMarkerRef.current) {
+      originMarkerRef.current = new mapboxgl.Marker({ color: '#8cf7a7' }).setLngLat(originLngLat).addTo(map)
+    } else {
+      originMarkerRef.current.setLngLat(originLngLat)
+    }
+
+    if (!destinationMarkerRef.current) {
+      destinationMarkerRef.current = new mapboxgl.Marker({ color: '#47ffe5' }).setLngLat(destinationLngLat).addTo(map)
+    } else {
+      destinationMarkerRef.current.setLngLat(destinationLngLat)
+    }
+
+    const lineData = {
+      type: 'Feature',
+      properties: {},
+      geometry: {
+        type: 'LineString',
+        coordinates: routeMetrics.geometry,
+      },
+    }
+
+    const existingSource = map.getSource('route-line') as mapboxgl.GeoJSONSource | undefined
+    if (existingSource) {
+      existingSource.setData(lineData as never)
+    } else if (map.isStyleLoaded()) {
+      map.addSource('route-line', { type: 'geojson', data: lineData as never })
+      map.addLayer({
+        id: 'route-line',
+        type: 'line',
+        source: 'route-line',
+        paint: {
+          'line-color': '#47ffe5',
+          'line-width': 4,
+          'line-opacity': 0.9,
+        },
+      })
+    }
+
+    const bounds = new mapboxgl.LngLatBounds(originLngLat, originLngLat)
+    routeMetrics.geometry.forEach(([lng, lat]) => bounds.extend([lng, lat]))
+    map.fitBounds(bounds, { padding: 70, duration: 650, maxZoom: 13 })
+  }, [routeMetrics, routeOrigin, selectedDestination.coordinates])
+
+  const handleInstall = async () => {
+    if (!installPrompt) return
     await installPrompt.prompt()
     const choice = await installPrompt.userChoice
-
     if (choice.outcome === 'accepted') {
       setInstallPrompt(null)
     }
@@ -581,59 +649,38 @@ function App() {
 
   const handleLocate = () => {
     if (!('geolocation' in navigator)) {
-      setLocationState('Geolocation unavailable')
+      setLocationState(t.geoUnavailable)
       return
     }
 
-    setLocationState('Refreshing GPS')
+    setLocationState(t.geoRefreshing)
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const nextCoordinates = {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
         }
-
         setCurrentCoordinates(nextCoordinates)
-        setLocationLabel(formatAreaLabel(nextCoordinates))
-        setLocationState('Position locked')
+        setLocationLabel(`Near ${selectedDestination.area}`)
+        setLocationState(t.geoLocked)
       },
-      (error) => {
-        const errorLabel =
-          error.code === error.PERMISSION_DENIED
-            ? 'Location denied'
-            : error.code === error.TIMEOUT
-              ? 'Location timeout'
-              : 'Location unavailable'
-
-        setLocationState(errorLabel)
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 300000,
-        timeout: 10000,
-      },
+      () => setLocationState(t.geoDenied),
+      { enableHighAccuracy: true, maximumAge: 300000, timeout: 10000 },
     )
   }
 
   const handleSelectDestination = (destinationId: string) => {
     setSelectedSearchResult(null)
     setSelectedDestinationId(destinationId)
-    setRecentIds((currentIds) => {
-      const nextIds = [destinationId, ...currentIds.filter((id) => id !== destinationId)]
-      return nextIds.slice(0, 4)
-    })
+    setRecentIds((currentIds) => [destinationId, ...currentIds.filter((id) => id !== destinationId)].slice(0, 4))
     setActiveTab('discover')
-    const destination = liveDestinations.find((entry) => entry.id === destinationId)
-
-    if (destination) {
-      setLocationState('Route updated')
-    }
+    setLocationState(t.routeUpdated)
   }
 
   const handleSelectSearchResult = (result: SearchResult) => {
     setSelectedSearchResult(result)
     setActiveTab('discover')
-    setLocationState(currentCoordinates ? 'Live route resolved' : 'Using default origin')
+    setLocationState(t.routeUpdated)
   }
 
   const toggleFavorite = (destinationId: string) => {
@@ -641,35 +688,60 @@ function App() {
       if (currentIds.includes(destinationId)) {
         return currentIds.filter((id) => id !== destinationId)
       }
-
       return [destinationId, ...currentIds]
     })
   }
 
-  const installLabel = isInstalled
-    ? 'App already installed'
-    : installPrompt
-      ? 'Install nav-starter'
-      : 'Use Share > Add to Home Screen on iPhone'
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setAuthStatus('loading')
+    setAuthError('')
 
-  const isInstallDisabled = isInstalled || !installPrompt
+    try {
+      const endpoint = buildApiUrl('/api/auth/login')
+      const response = await fetch(endpoint.toString(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailInput, password: passwordInput }),
+      })
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as { error?: string }
+        throw new Error(payload.error || 'Login failed')
+      }
+
+      const payload = (await response.json()) as { token: string; user: SessionUser }
+      setToken(payload.token)
+      setSessionUser(payload.user)
+      setAuthStatus('authenticated')
+    } catch (error) {
+      setAuthStatus('error')
+      setAuthError((error as Error).message || t.authLoginFailed)
+    }
+  }
+
+  const handleLogout = () => {
+    setToken('')
+    setSessionUser(null)
+    setAuthStatus('idle')
+    setAuthError('')
+  }
 
   const renderDiscoverScreen = () => (
     <>
       <section className="map-card">
-        <div className="map-glow" />
-        <div className="map-grid" />
-        <div className="route-pill route-pill-start">{locationLabel}</div>
-        <div className="route-pill route-pill-end">{selectedDestination.name}</div>
-        <div className="route-line" />
-        <div className="route-pin route-pin-start" />
-        <div className="route-pin route-pin-end" />
+        <div ref={mapNodeRef} className="map-canvas" data-testid="map-canvas" />
+        {(mapboxPublicToken ? mapError : t.mapTokenMissing) ? (
+          <div className="map-error-banner">{mapboxPublicToken ? mapError : t.mapTokenMissing}</div>
+        ) : null}
         <div className="map-overlay">
-          <p className="micro-label">Live route</p>
+          <p className="micro-label">{t.liveRoute}</p>
           <strong>{selectedDestination.name}</strong>
           <span>
-            {activeEta} min in {travelMode} mode, arrival around {arrivalTime}
+            {activeEta} min · {travelMode} · {arrivalTime}
           </span>
+          {routeStatus === 'loading' ? <span className="inline-loading">{t.routeLoading}</span> : null}
+          {routeError ? <span className="inline-error">{routeError}</span> : null}
         </div>
       </section>
 
@@ -681,11 +753,11 @@ function App() {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search destination or area"
+              placeholder={t.searchPlaceholder}
             />
           </label>
           <button type="button" className="ghost-button" onClick={handleLocate}>
-            Locate me
+            {t.locateMe}
           </button>
         </div>
 
@@ -697,7 +769,7 @@ function App() {
               className={mode.id === travelMode ? 'mode-button is-active' : 'mode-button'}
               onClick={() => setTravelMode(mode.id)}
             >
-              {mode.label}
+              {t[mode.labelKey]}
             </button>
           ))}
         </div>
@@ -708,15 +780,8 @@ function App() {
             const isFavorite = favoriteIds.includes(destination.id)
 
             return (
-              <article
-                key={destination.id}
-                className={isSelected ? 'result-card is-selected' : 'result-card'}
-              >
-                <button
-                  type="button"
-                  className="result-main"
-                  onClick={() => handleSelectDestination(destination.id)}
-                >
+              <article key={destination.id} className={isSelected ? 'result-card is-selected' : 'result-card'}>
+                <button type="button" className="result-main" onClick={() => handleSelectDestination(destination.id)}>
                   <div>
                     <p className="micro-label">{destination.tag}</p>
                     <strong>{destination.name}</strong>
@@ -731,73 +796,53 @@ function App() {
                   type="button"
                   className={isFavorite ? 'favorite-button is-active' : 'favorite-button'}
                   onClick={() => toggleFavorite(destination.id)}
-                  aria-label={
-                    isFavorite
-                      ? `Remove ${destination.name} from favorites`
-                      : `Save ${destination.name} as favorite`
-                  }
                 >
-                  {isFavorite ? 'Saved' : 'Save'}
+                  {isFavorite ? t.saved : t.save}
                 </button>
               </article>
             )
           })}
 
-          {filteredDestinations.length === 0 ? (
-            <p className="empty-state">No destination matches this search yet.</p>
-          ) : null}
+          {filteredDestinations.length === 0 ? <p className="empty-state">{t.noDestination}</p> : null}
 
           {shouldSearchOnline ? (
             <section className="remote-results-block">
               <div className="section-header-row compact-header">
                 <div>
-                  <p className="micro-label">Online search</p>
-                  <strong>OpenStreetMap results</strong>
+                  <p className="micro-label">{t.onlineSearch}</p>
+                  <strong>OpenStreetMap</strong>
                 </div>
                 <span className="result-source-badge">
-                  {visibleSearchStatus === 'loading'
-                    ? 'Searching'
-                    : visibleSearchStatus === 'error'
-                      ? 'Unavailable'
-                      : visibleSearchResults.length
-                        ? `${visibleSearchResults.length} found`
-                        : 'No match'}
+                  {searchStatus === 'loading'
+                    ? t.searching
+                    : searchStatus === 'error'
+                      ? t.unavailable
+                      : searchResults.length
+                        ? `${searchResults.length} ${t.found}`
+                        : t.noMatch}
                 </span>
               </div>
 
-              {visibleSearchResults.map((result) => (
+              {searchStatus === 'loading' ? <div className="skeleton-row" /> : null}
+              {searchError ? <p className="error-state">{searchError}</p> : null}
+
+              {searchResults.map((result) => (
                 <article key={result.id} className="result-card remote-card">
-                  <button
-                    type="button"
-                    className="result-main"
-                    onClick={() => handleSelectSearchResult(result)}
-                  >
+                  <button type="button" className="result-main" onClick={() => handleSelectSearchResult(result)}>
                     <div>
                       <p className="micro-label">Search</p>
                       <strong>{result.name}</strong>
                       <p>{result.area}</p>
                     </div>
                     <div className="result-meta">
-                      <span>Route</span>
-                      <small>Live geocode</small>
+                      <span>{t.routeLabel}</span>
+                      <small>{t.liveGeocode}</small>
                     </div>
                   </button>
                 </article>
               ))}
             </section>
           ) : null}
-        </div>
-      </section>
-
-      <section className="panel-card emphasis-card">
-        <div>
-          <p className="micro-label">Suggested now</p>
-          <h2>{selectedDestination.description}</h2>
-        </div>
-        <div className="stat-row">
-          <span>{routeMetrics?.distanceKm ?? selectedDestination.distanceKm} km</span>
-          <span>{selectedDestination.traffic} traffic</span>
-          <span>{routeMetrics?.source === 'live' ? 'Live routing' : selectedDestination.offlinePack}</span>
         </div>
       </section>
     </>
@@ -807,14 +852,14 @@ function App() {
     <section className="panel-card timeline-card">
       <div className="section-header-row">
         <div>
-          <p className="micro-label">Active route</p>
+          <p className="micro-label">{t.activeRoute}</p>
           <h2>{selectedDestination.name}</h2>
         </div>
         <span className="signal-badge">ETA {activeEta} min</span>
       </div>
 
       <ol className="timeline-list">
-        {(routeMetrics?.steps ?? selectedDestination.steps).map((step) => (
+        {(routeMetrics?.steps || selectedDestination.baseSteps).map((step) => (
           <li key={step.title}>
             <span>{formatClock(step.baseMinuteOffset)}</span>
             <div>
@@ -828,11 +873,11 @@ function App() {
       <div className="journey-summary-grid">
         <article>
           <strong>{selectedDestination.parking}</strong>
-          <span>Parking status</span>
+          <span>{t.parkingStatus}</span>
         </article>
         <article>
-          <strong>{routeMetrics?.source === 'live' ? 'OSRM live route' : selectedDestination.offlinePack}</strong>
-          <span>{routeMetrics?.source === 'live' ? 'Routing source' : 'Offline pack'}</span>
+          <strong>{routeMetrics?.source === 'live' ? t.liveRouting : selectedDestination.offlinePack}</strong>
+          <span>{routeMetrics?.source === 'live' ? t.routingSource : t.offlinePack}</span>
         </article>
       </div>
     </section>
@@ -842,41 +887,29 @@ function App() {
     <section className="panel-card saved-card">
       <div className="section-header-row">
         <div>
-          <p className="micro-label">Favorites</p>
-          <h2>Quick destinations</h2>
+          <p className="micro-label">{t.favorites}</p>
+          <h2>{t.quickDestinations}</h2>
         </div>
-        <span className="signal-badge">{favoriteDestinations.length} saved</span>
+        <span className="signal-badge">{favoriteDestinations.length} {t.saved}</span>
       </div>
 
       <div className="saved-list">
         {favoriteDestinations.map((destination) => (
           <article key={destination.id} className="saved-item-card">
-            <button
-              type="button"
-              className="saved-item"
-              onClick={() => handleSelectDestination(destination.id)}
-            >
+            <button type="button" className="saved-item" onClick={() => handleSelectDestination(destination.id)}>
               <div>
                 <strong>{destination.name}</strong>
-                <p>
-                  {destination.tag} · {destination.area}
-                </p>
+                <p>{destination.tag} · {destination.area}</p>
               </div>
               <span>{destination.etaByMode[travelMode]} min</span>
             </button>
-            <button
-              type="button"
-              className="ghost-button inline-ghost"
-              onClick={() => toggleFavorite(destination.id)}
-            >
-              Remove
+            <button type="button" className="ghost-button inline-ghost" onClick={() => toggleFavorite(destination.id)}>
+              {t.remove}
             </button>
           </article>
         ))}
 
-        {favoriteDestinations.length === 0 ? (
-          <p className="empty-state">Save a route from Discover to keep it here.</p>
-        ) : null}
+        {favoriteDestinations.length === 0 ? <p className="empty-state">{t.noFavorites}</p> : null}
       </div>
     </section>
   )
@@ -884,41 +917,36 @@ function App() {
   const renderProfileScreen = () => (
     <section className="panel-card profile-card">
       <div>
-        <p className="micro-label">Profile</p>
-        <h2>Usage snapshot</h2>
+        <p className="micro-label">{t.profile}</p>
+        <h2>{t.usageSnapshot}</h2>
       </div>
 
       <div className="profile-grid">
         <article>
-          <strong>{totalTrips}</strong>
-          <span>Trips this week</span>
+          <strong>{recentIds.length + 9}</strong>
+          <span>{t.tripsWeek}</span>
         </article>
         <article>
-          <strong>{savedMinutes} min</strong>
-          <span>Estimated time saved</span>
+          <strong>{favoriteIds.length * 7 + recentIds.length * 4} min</strong>
+          <span>{t.timeSaved}</span>
         </article>
         <article>
           <strong>{favoriteIds.length}</strong>
-          <span>Favorite destinations</span>
+          <span>{t.favoriteDestinations}</span>
         </article>
       </div>
 
       <div className="recent-panel">
         <div className="section-header-row">
           <div>
-            <p className="micro-label">Recent activity</p>
-            <h2>Last selected routes</h2>
+            <p className="micro-label">{t.recentActivity}</p>
+            <h2>{t.lastRoutes}</h2>
           </div>
         </div>
 
         <div className="recent-list">
           {recentDestinations.map((destination) => (
-            <button
-              key={destination.id}
-              type="button"
-              className="recent-item"
-              onClick={() => handleSelectDestination(destination.id)}
-            >
+            <button key={destination.id} type="button" className="recent-item" onClick={() => handleSelectDestination(destination.id)}>
               <div>
                 <strong>{destination.name}</strong>
                 <p>{destination.area}</p>
@@ -932,67 +960,96 @@ function App() {
   )
 
   const renderScreen = () => {
-    if (activeTab === 'discover') {
-      return renderDiscoverScreen()
-    }
-
-    if (activeTab === 'journeys') {
-      return renderJourneyScreen()
-    }
-
-    if (activeTab === 'saved') {
-      return renderSavedScreen()
-    }
-
+    if (activeTab === 'discover') return renderDiscoverScreen()
+    if (activeTab === 'journeys') return renderJourneyScreen()
+    if (activeTab === 'saved') return renderSavedScreen()
     return renderProfileScreen()
   }
+
+  const isInstallDisabled = isInstalled || !installPrompt
 
   return (
     <main className="app-shell">
       <section className="intro-panel">
-        <p className="eyebrow">Operational mobile navigation app</p>
-        <h1>nav-starter passe d’une demo visuelle a une base interactive exploitable.</h1>
-        <p className="lead">
-          Recherche de destinations, changement de mode de trajet, favoris persistants
-          et historique recent sont maintenant relies a un etat applicatif simple,
-          avec geolocalisation navigateur pour recalculer les trajets.
-        </p>
+        <div className="section-header-row locale-row">
+          <div>
+            <p className="eyebrow">{t.operationalTitle}</p>
+            <h1>{t.heroTitle}</h1>
+          </div>
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => setLocale((current) => (current === 'fr' ? 'en' : 'fr'))}
+            data-testid="locale-toggle"
+          >
+            {locale === 'fr' ? 'EN' : 'FR'}
+          </button>
+        </div>
+
+        <p className="lead">{t.heroLead}</p>
+
+        <div className="auth-panel">
+          <div>
+            <p className="micro-label">{t.authentication}</p>
+            <strong>{sessionUser ? `${t.loggedInAs} ${sessionUser.email}` : t.loginRequired}</strong>
+            <p>{t.demoCredentials}</p>
+          </div>
+
+          {sessionUser ? (
+            <button type="button" className="ghost-button" onClick={handleLogout}>
+              {t.logout}
+            </button>
+          ) : (
+            <form className="auth-form" onSubmit={handleLogin}>
+              <input
+                type="email"
+                value={emailInput}
+                onChange={(event) => setEmailInput(event.target.value)}
+                placeholder="demo@navstarter.dev"
+                required
+              />
+              <input
+                type="password"
+                value={passwordInput}
+                onChange={(event) => setPasswordInput(event.target.value)}
+                placeholder="NavStarter123!"
+                required
+              />
+              <button type="submit" className="install-button" disabled={authStatus === 'loading'}>
+                {authStatus === 'loading' ? t.loggingIn : t.login}
+              </button>
+            </form>
+          )}
+
+          {authError ? <p className="error-state">{authError}</p> : null}
+        </div>
 
         <div className="install-banner">
           <div>
-            <p className="micro-label">Install status</p>
-            <strong>{isInstalled ? 'Installed on this device' : 'Ready for install'}</strong>
-            <p>
-              Android affichera un prompt natif. Sur iPhone, utilisez le menu de
-              partage puis Add to Home Screen.
-            </p>
+            <p className="micro-label">{t.installStatus}</p>
+            <strong>{isInstalled ? t.alreadyInstalled : t.readyToInstall}</strong>
+            <p>{t.installHint}</p>
           </div>
-          <button
-            className="install-button"
-            onClick={() => {
-              void handleInstall()
-            }}
-            disabled={isInstallDisabled}
-          >
-            {installLabel}
+          <button className="install-button" onClick={() => void handleInstall()} disabled={isInstallDisabled}>
+            {isInstalled ? t.alreadyInstalled : t.installApp}
           </button>
         </div>
 
         <div className="summary-grid">
           <article className="summary-card">
-            <p className="micro-label">Navigation</p>
-            <strong>{destinations.length} destinations</strong>
-            <span>Route cards can be filtered and selected instantly.</span>
+            <p className="micro-label">{t.navigation}</p>
+            <strong>{destinations.length} {t.destinations}</strong>
+            <span>{t.destinationHint}</span>
           </article>
           <article className="summary-card">
-            <p className="micro-label">Persistence</p>
-            <strong>{favoriteIds.length} favorites saved</strong>
-            <span>Favorites and recent routes survive app reloads.</span>
+            <p className="micro-label">{t.persistence}</p>
+            <strong>{favoriteIds.length} {t.saved}</strong>
+            <span>{t.persistenceHint}</span>
           </article>
           <article className="summary-card">
-            <p className="micro-label">Current route</p>
+            <p className="micro-label">{t.currentRoute}</p>
             <strong>{selectedDestination.name}</strong>
-            <span>Arrival around {arrivalTime} in {travelMode} mode from your current position.</span>
+            <span>{t.arrivalAround} {arrivalTime} · {travelMode}</span>
           </article>
         </div>
       </section>
@@ -1006,7 +1063,7 @@ function App() {
 
           <div className="screen-header">
             <div>
-              <p className="micro-label">Current area</p>
+              <p className="micro-label">{t.currentArea}</p>
               <strong>{locationLabel}</strong>
             </div>
             <span className="signal-badge">{locationState}</span>
@@ -1015,15 +1072,15 @@ function App() {
           <div className="screen-content">{renderScreen()}</div>
 
           <nav className="bottom-nav" aria-label="App sections">
-            {tabs.map((tab) => (
+            {(['discover', 'journeys', 'saved', 'profile'] as TabId[]).map((tabId) => (
               <button
-                key={tab.id}
+                key={tabId}
                 type="button"
-                className={tab.id === activeTab ? 'tab-button is-active' : 'tab-button'}
-                onClick={() => setActiveTab(tab.id)}
+                className={tabId === activeTab ? 'tab-button is-active' : 'tab-button'}
+                onClick={() => setActiveTab(tabId)}
               >
-                <span>{tab.icon}</span>
-                <span>{tab.label}</span>
+                <span>{tabId === 'discover' ? '◎' : tabId === 'journeys' ? '↗' : tabId === 'saved' ? '★' : '◌'}</span>
+                <span>{tabLabels[tabId]}</span>
               </button>
             ))}
           </nav>
@@ -1031,35 +1088,30 @@ function App() {
 
         <aside className="details-panel">
           <section className="details-card accent-surface">
-            <p className="micro-label">Operational state</p>
+            <p className="micro-label">{t.operationalState}</p>
             <h2>{selectedDestination.name}</h2>
             <ul>
               <li>{selectedDestination.description}</li>
-              <li>Browser geolocation can refresh current position and recompute route metrics.</li>
-              <li>Remote search uses OpenStreetMap geocoding and OSRM routing services.</li>
-              <li>{selectedDestination.parking}</li>
-              <li>Offline pack: {selectedDestination.offlinePack}</li>
+              <li>{t.detailsGeo}</li>
+              <li>{t.detailsSearch}</li>
+              <li>{t.detailsAuth}</li>
+              <li>{routeMetrics?.source === 'live' ? t.liveRouting : selectedDestination.offlinePack}</li>
             </ul>
           </section>
 
           <section className="details-card">
-            <p className="micro-label">Recommended next step</p>
-            <h2>What to wire next</h2>
+            <p className="micro-label">{t.uxState}</p>
+            <h2>{t.uxTitle}</h2>
             <ol>
-              <li>Connect this state to a real mapping or routing API.</li>
-              <li>Add account sync for favorites and trip history.</li>
-              <li>Introduce live traffic or notification refresh.</li>
+              <li>{searchStatus === 'loading' ? t.searchSkeleton : t.searchReady}</li>
+              <li>{routeStatus === 'loading' ? t.routeSkeleton : t.routeReady}</li>
+              <li>{searchError || routeError ? t.clearErrors : t.noErrorNow}</li>
             </ol>
           </section>
 
           <section className="details-card compact-card">
             <p className="micro-label">Repository</p>
-            <a
-              className="repo-link"
-              href="https://github.com/El-hadj10/nav-starter"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a className="repo-link" href="https://github.com/El-hadj10/nav-starter" target="_blank" rel="noopener noreferrer">
               github.com/El-hadj10/nav-starter
             </a>
           </section>

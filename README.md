@@ -29,12 +29,17 @@ Installable mobile navigation PWA — destination search, Mapbox-powered routing
 ## Fonctionnalites
 
 - Recherche de destinations par nom, zone ou categorie
+- Carte interactive Mapbox GL JS visible directement dans l application
 - Routage voiture, transport en commun et marche (Mapbox Directions)
 - Geocodage distant via Mapbox Geocoding
 - Geolocalisation navigateur pour recalcul ETA en temps reel
+- Authentification JWT (login + verification de session)
 - Favoris et historique recent persistes en localStorage
 - Installation mobile (PWA) — Android Chrome et iOS Safari
+- Service worker avance (network-first pour API/navigation, stale-while-revalidate pour assets)
+- Internationalisation FR/EN (switch runtime)
 - Backend Node.js proxy securise (cle API jamais exposee cote client)
+- Etats UX explicites: skeletons de chargement + messages d erreurs clairs
 - Fallback estime si le service de routage ne repond pas
 
 ## Architecture
@@ -55,7 +60,11 @@ npm install
 
 # Variables d environnement backend
 cp .env.example .env
-# Renseigner MAPBOX_TOKEN et ALLOWED_ORIGINS dans .env
+# Renseigner VITE_MAPBOX_PUBLIC_TOKEN et VITE_API_BASE_URL dans .env
+
+# Variables backend
+cp backend/.env.example backend/.env
+# Renseigner MAPBOX_TOKEN, JWT_SECRET et ALLOWED_ORIGINS
 
 # Lancer le backend proxy
 npm run backend:start
@@ -77,11 +86,47 @@ npm run preview  # verifier le build en local
 - URL live : `https://el-hadj10.github.io/nav-starter/`
 - Variable GitHub Actions requise : `VITE_API_BASE_URL` → URL publique du backend (Render ou Railway)
 
+## Tests
+
+```bash
+# Unitaires (Vitest + coverage)
+npm run test:unit
+
+# E2E (Playwright)
+npm run test:e2e
+```
+
+Les tests couvrent les helpers de navigation/i18n et un parcours E2E de base (chargement app, carte visible, switch de langue).
+
+## Lighthouse
+
+Mesure cible (build production):
+
+| Category | Score cible |
+|---|---|
+| Performance | 90+ |
+| Accessibility | 90+ |
+| Best Practices | 90+ |
+| SEO | 90+ |
+| PWA | 90+ |
+
+Commande recommandee:
+
+```bash
+npm run build
+npm run preview
+npx lighthouse http://localhost:4173/nav-starter/ --only-categories=performance,accessibility,best-practices,seo,pwa --output=html --output-path=./docs/lighthouse-report.html
+```
+
+Le rapport Lighthouse peut ensuite etre archive dans `docs/lighthouse-report.html` pour preuve qualitative.
+
 ## Backend (proxy Mapbox)
 
 | Endpoint | Description |
 |---|---|
 | `GET /health` | Verification disponibilite |
+| `POST /api/auth/login` | Login demo + token JWT |
+| `GET /api/auth/session` | Validation de session JWT |
 | `GET /api/geocode?q=adresse` | Geocodage Mapbox |
 | `GET /api/route?from=lon,lat&to=lon,lat&profile=driving\|walking` | Routage Mapbox |
 

@@ -68,6 +68,30 @@
   background: rgba(255, 255, 255, 0.06);
 }
 
+.auth-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.auth-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 10px;
+}
+
+.auth-form input {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: var(--text-h);
+  background: rgba(3, 13, 26, 0.74);
+}
+
 .install-banner strong,
 .summary-card strong,
 .map-overlay strong,
@@ -234,6 +258,23 @@
   min-height: 290px;
   background:
     linear-gradient(180deg, rgba(11, 42, 71, 0.98), rgba(7, 27, 46, 0.98));
+}
+
+.map-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.map-error-banner {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.78);
+  z-index: 2;
 }
 
 .map-glow,
@@ -416,6 +457,39 @@
   color: var(--accent-soft);
   background: rgba(71, 255, 229, 0.08);
   font-size: 0.82rem;
+}
+
+.skeleton-row {
+  height: 56px;
+  border-radius: 14px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
+  background-size: 200% 100%;
+  animation: shimmer 1.3s ease-in-out infinite;
+}
+
+.error-state,
+.inline-error {
+  margin: 0;
+  color: #fecaca;
+  font-size: 0.88rem;
+}
+
+.inline-loading {
+  color: var(--accent-soft);
+  font-size: 0.88rem;
+}
+
+.locale-row {
+  align-items: flex-start;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
 }
 
 .remote-card {
@@ -666,6 +740,10 @@
   .section-header-row {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .auth-form {
+    grid-template-columns: 1fr;
   }
 
   .mode-switcher,
