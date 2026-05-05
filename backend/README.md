@@ -7,12 +7,12 @@ Ce backend sert de proxy sécurisé pour les appels aux APIs de géocodage et de
 1. Définir les variables d'environnement :
 
 ```bash
-MAPBOX_TOKEN=VOTRE_CLE_API
-ALLOWED_ORIGINS=https://el-hadj10.github.io,http://localhost:5173
+MAPBOX_TOKEN=your_mapbox_api_key_here
+ALLOWED_ORIGINS=http://localhost:5173,https://yourdomain.com
 PORT=4000
-JWT_SECRET=change-this-in-production
-DEMO_USER_EMAIL=demo@navstarter.dev
-DEMO_USER_PASSWORD=NavStarter123!
+JWT_SECRET=your-secret-key-change-in-production
+DEMO_USER_EMAIL=demo@example.com
+DEMO_USER_PASSWORD=DemoPassword123!
 ```
 
 1. Installer les dépendances à la racine du projet :

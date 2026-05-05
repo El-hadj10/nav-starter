@@ -1111,8 +1111,8 @@ function App() {
 
           <section className="details-card compact-card">
             <p className="micro-label">Repository</p>
-            <a className="repo-link" href="https://github.com/El-hadj10/nav-starter" target="_blank" rel="noopener noreferrer">
-              github.com/El-hadj10/nav-starter
+            <a className="repo-link" href="https://github.com/your-username/your-repo" target="_blank" rel="noopener noreferrer">
+              github.com/your-username/your-repo
             </a>
           </section>
         </aside>
