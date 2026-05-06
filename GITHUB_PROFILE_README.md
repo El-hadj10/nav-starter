@@ -2,13 +2,15 @@
 
 <!-- Animated Banner: World Map Navigation -->
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&height=200&color=0:1e293b,100:0f172a&text=Full-Stack%20Developer&fontAlignY=35&desc=Cybersecurity%20%7C%20Navigation%20Apps%20%7C%20AI%20Systems&descAlignY=51&fontColor=0ea5e9&descSize=18" alt="Animated Banner" />
+  <img src="https://capsule-render.vercel.app/api?type=waving&height=260&color=0:1e293b,100:0f172a&text=Full-Stack%20Developer&fontAlignY=30&desc=Cybersecurity%20%7C%20Navigation%20Apps%20%7C%20AI%20Systems&descAlignY=70&fontColor=0ea5e9&descSize=18" alt="Animated Banner" />
 </p>
 
 <!-- Animated Typing Intro -->
 <p align="center">
   <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=18&pause=1000&color=0EA5E9&center=true&vCenter=true&width=700&lines=Light%20for%20clarity;Shadow%20for%20security;Order%20for%20structure;Ship%20fast.%20Build%20durable." alt="Typing Intro" />
 </p>
+
+<br/>
 
 <p align="center">
   <b>Full-Stack Developer · Cybersecurity Enthusiast</b><br/>
@@ -82,7 +84,7 @@ E-commerce platform driven by AI: automated sourcing, scoring, pricing, and publ
 <div align="center">
   <h2>📊 The Journey</h2>
   
-  <img src="https://capsule-render.vercel.app/api?type=rect&height=100&color=gradient&customColorList=0:0ea5e9,50:6366f1,100:8b5cf6&text=📈%20Shipping%20Fast&fontSize=30&fontColor=ffffff&fontAlignY=50&desc=Building%20durable%20systems&descFontSize=13&descAlignY=70&descColor=ffffff" alt="Progress" />
+  <img src="https://capsule-render.vercel.app/api?type=rect&height=130&color=gradient&customColorList=0:0ea5e9,50:6366f1,100:8b5cf6&text=📈%20Shipping%20Fast&fontSize=30&fontColor=ffffff&fontAlignY=40&desc=Building%20durable%20systems&descFontSize=13&descAlignY=85&descColor=ffffff" alt="Progress" />
 </div>
 
 ---
@@ -137,5 +139,5 @@ E-commerce platform driven by AI: automated sourcing, scoring, pricing, and publ
 
 <!-- Animated journey complete banner -->
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=rect&height=100&color=0:0f172a,100:1e293b&text=🚀%20From%20Idea%20to%20Production&fontSize=28&fontColor=0ea5e9&fontAlignY=50&desc=With%20discipline%20and%20focus&descFontSize=13&descColor=6366f1" alt="Signature" />
+  <img src="https://capsule-render.vercel.app/api?type=rect&height=130&color=0:0f172a,100:1e293b&text=🚀%20From%20Idea%20to%20Production&fontSize=28&fontColor=0ea5e9&fontAlignY=40&desc=With%20discipline%20and%20focus&descFontSize=13&descColor=6366f1&descAlignY=85" alt="Signature" />
 </p>
