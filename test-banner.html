@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SVG Banner Test</title>
+</head>
+<body>
+  <h2>Test Banner SVG</h2>
+
+  <svg width="100%" height="140" viewBox="0 0 600 140" style="background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%); border-radius: 8px; max-width: 600px;">
+    <defs>
+      <style>
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+        @keyframes routeGlow {
+          0%, 100% { stroke-width: 2; }
+          50% { stroke-width: 3; }
+        }
+        .car-icon { animation: pulse 2s infinite; }
+        .route-path { animation: routeGlow 2s infinite; }
+      </style>
+    </defs>
+
+    <!-- Route line -->
+    <path class="route-path" d="M 50 70 Q 150 40, 250 70 T 550 70" stroke="#61dafb" fill="none" stroke-width="2"/>
+
+    <!-- Car -->
+    <g class="car-icon" transform="translate(80, 55)">
+      <rect x="0" y="0" width="30" height="16" rx="3" fill="#ffffff"/>
+      <circle cx="7" cy="16" r="4" fill="#333"/>
+      <circle cx="23" cy="16" r="4" fill="#333"/>
+      <rect x="3" y="2" width="10" height="7" fill="#61dafb" opacity="0.8"/>
+    </g>
+
+    <!-- Text -->
+    <text x="300" y="50" font-size="42" font-weight="bold" text-anchor="middle" fill="#ffffff">🚗 nav-starter</text>
+    <text x="300" y="85" font-size="16" text-anchor="middle" fill="#e0f2fe">PWA Navigation • Mapbox • Offline Ready</text>
+  </svg>
+
+</body>
+</html>

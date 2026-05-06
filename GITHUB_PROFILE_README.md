@@ -43,39 +43,22 @@ I build useful, readable, and robust systems — fast delivery, durable architec
 <div align="center">
   <h2>🗺️ Featured: Navigation Apps</h2>
   
-  <!-- Animated map banner with pulsing effect -->
   <svg width="100%" height="140" viewBox="0 0 600 140" style="margin: 10px auto; display: block; background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%); border-radius: 8px;">
     <defs>
       <style>
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.7; }
-        }
-        @keyframes routeGlow {
-          0%, 100% { stroke-width: 2; filter: drop-shadow(0 0 2px #0ea5e9); }
-          50% { stroke-width: 3; filter: drop-shadow(0 0 8px #0ea5e9); }
-        }
-        .car-icon {
-          animation: pulse 2s infinite;
-        }
-        .route-path {
-          animation: routeGlow 2s infinite;
-        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        @keyframes routeGlow { 0%, 100% { stroke-width: 2; } 50% { stroke-width: 3; } }
+        .car-icon { animation: pulse 2s infinite; }
+        .route-path { animation: routeGlow 2s infinite; }
       </style>
     </defs>
-    
-    <!-- Animated route lines -->
     <path class="route-path" d="M 50 70 Q 150 40, 250 70 T 550 70" stroke="#61dafb" fill="none" stroke-width="2"/>
-    
-    <!-- Pulsing car icon -->
     <g class="car-icon" transform="translate(80, 55)">
       <rect x="0" y="0" width="30" height="16" rx="3" fill="#ffffff"/>
       <circle cx="7" cy="16" r="4" fill="#333"/>
       <circle cx="23" cy="16" r="4" fill="#333"/>
       <rect x="3" y="2" width="10" height="7" fill="#61dafb" opacity="0.8"/>
     </g>
-    
-    <!-- Text overlay -->
     <text x="300" y="50" font-size="42" font-weight="bold" text-anchor="middle" fill="#ffffff">🚗 nav-starter</text>
     <text x="300" y="85" font-size="16" text-anchor="middle" fill="#e0f2fe">PWA Navigation • Mapbox • Offline Ready</text>
   </svg>
