@@ -1,8 +1,18 @@
 <h1 align="center">Nour — El-hadj10</h1>
 
+<!-- Animated Banner: World Map Navigation -->
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&height=200&color=0:1e293b,100:0f172a&text=Full-Stack%20Developer&fontAlignY=35&desc=Cybersecurity%20%7C%20Navigation%20Apps%20%7C%20AI%20Systems&descAlignY=51&fontColor=0ea5e9&descSize=18" alt="Animated Banner" />
+</p>
+
+<!-- Animated Typing Intro -->
+<p align="center">
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=16&pause=1000&color=0EA5E9&center=true&vCenter=true&width=600&lines=Light+for+clarity+%E2%9C%A8;Shadow+for+security+🔐;Order+for+structure+📐;Ship+fast.+Build+durable.+⚡" alt="Typing Intro" />
+</p>
+
 <p align="center">
   <b>Full-Stack Developer · Cybersecurity Enthusiast</b><br/>
-  <i>Light for clarity · Shadow for security · Order for structure</i>
+  <i>Building navigation, security, and AI systems</i>
 </p>
 
 <p align="center">
@@ -24,6 +34,16 @@ I build useful, readable, and robust systems — fast delivery, durable architec
 - Clean architecture to scale without chaos
 - Security reflexes to harden the surface
 - Fast execution without cutting corners
+
+---
+
+<!-- Featured Project: nav-starter with animated map -->
+<div align="center">
+  <h2>🗺️ Featured: Navigation Apps</h2>
+  
+  <!-- Animated map banner -->
+  <img src="https://capsule-render.vercel.app/api?type=rect&height=120&color=0:0ea5e9,100:6366f1&text=🚗%20nav-starter&fontSize=40&fontColor=ffffff&fontAlignY=55&desc=PWA%20Navigation%20%7C%20Mapbox%20%7C%20Offline%20Ready&descFontSize=14&descAlignY=75&descColor=ffffff" alt="nav-starter Banner" />
+</div>
 
 ---
 
@@ -58,9 +78,53 @@ E-commerce platform driven by AI: automated sourcing, scoring, pricing, and publ
 
 ---
 
+<!-- Animated Journey Stats -->
+<div align="center">
+  <h2>📊 The Journey</h2>
+  
+  <img src="https://capsule-render.vercel.app/api?type=rect&height=100&color=gradient&customColorList=0:0ea5e9,50:6366f1,100:8b5cf6&text=📈%20Shipping%20Fast&fontSize=30&fontColor=ffffff&fontAlignY=50&desc=Building%20durable%20systems&descFontSize=13&descAlignY=70&descColor=ffffff" alt="Progress" />
+</div>
+
+---
+
 ## GitHub Stats
 
 <p align="center">
+  <!-- Animated driving indicator -->
+  <svg width="300" height="80" viewBox="0 0 300 80" style="margin: 20px auto; display: block;">
+    <!-- Road -->
+    <defs>
+      <style>
+        @keyframes drive {
+          0% { transform: translateX(-30px); }
+          100% { transform: translateX(270px); }
+        }
+        .car {
+          animation: drive 4s infinite ease-in-out;
+        }
+      </style>
+    </defs>
+    
+    <!-- Track line -->
+    <line x1="0" y1="40" x2="300" y2="40" stroke="#0ea5e9" stroke-width="2" stroke-dasharray="5,5" opacity="0.5"/>
+    
+    <!-- Start point (Origin) -->
+    <circle cx="10" cy="40" r="4" fill="#10b981"/>
+    <text x="10" y="58" font-size="10" text-anchor="middle" fill="#10b981">Start</text>
+    
+    <!-- End point (Destination) -->
+    <circle cx="290" cy="40" r="4" fill="#ef4444"/>
+    <text x="290" y="58" font-size="10" text-anchor="middle" fill="#ef4444">End</text>
+    
+    <!-- Animated car -->
+    <g class="car" transform="translate(0, 0)">
+      <rect x="0" y="30" width="24" height="14" rx="2" fill="#0ea5e9"/>
+      <circle cx="6" cy="45" r="3" fill="#333"/>
+      <circle cx="18" cy="45" r="3" fill="#333"/>
+      <rect x="2" y="32" width="8" height="6" fill="#61dafb" opacity="0.7"/>
+    </g>
+  </svg>
+  
   <img src="https://github-profile-summary-cards.vercel.app/api/cards/stats?username=El-hadj10&theme=github_dark" alt="GitHub Stats" />
   <img src="https://github-profile-summary-cards.vercel.app/api/cards/repos-per-language?username=El-hadj10&theme=github_dark" alt="Top Languages" />
 </p>
@@ -71,6 +135,7 @@ E-commerce platform driven by AI: automated sourcing, scoring, pricing, and publ
 
 ---
 
+<!-- Animated journey complete banner -->
 <p align="center">
-  <i>From idea to production — with discipline.</i>
+  <img src="https://capsule-render.vercel.app/api?type=rect&height=100&color=0:0f172a,100:1e293b&text=🚀%20From%20Idea%20to%20Production&fontSize=28&fontColor=0ea5e9&fontAlignY=50&desc=With%20discipline%20and%20focus&descFontSize=13&descColor=6366f1" alt="Signature" />
 </p>
