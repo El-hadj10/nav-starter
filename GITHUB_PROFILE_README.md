@@ -7,7 +7,7 @@
 
 <!-- Animated Typing Intro -->
 <p align="center">
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=16&pause=1000&color=0EA5E9&center=true&vCenter=true&width=600&lines=Light+for+clarity+%E2%9C%A8;Shadow+for+security+🔐;Order+for+structure+📐;Ship+fast.+Build+durable.+⚡" alt="Typing Intro" />
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=18&pause=1000&color=0EA5E9&center=true&vCenter=true&width=700&lines=Light%20for%20clarity;Shadow%20for%20security;Order%20for%20structure;Ship%20fast.%20Build%20durable." alt="Typing Intro" />
 </p>
 
 <p align="center">
