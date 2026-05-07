@@ -43,25 +43,7 @@ I build useful, readable, and robust systems — fast delivery, durable architec
 <div align="center">
   <h2>🗺️ Featured: Navigation Apps</h2>
   
-  <svg width="100%" height="140" viewBox="0 0 600 140" style="margin: 10px auto; display: block; background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%); border-radius: 8px;">
-    <defs>
-      <style>
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-        @keyframes routeGlow { 0%, 100% { stroke-width: 2; } 50% { stroke-width: 3; } }
-        .car-icon { animation: pulse 2s infinite; }
-        .route-path { animation: routeGlow 2s infinite; }
-      </style>
-    </defs>
-    <path class="route-path" d="M 50 70 Q 150 40, 250 70 T 550 70" stroke="#61dafb" fill="none" stroke-width="2"/>
-    <g class="car-icon" transform="translate(80, 55)">
-      <rect x="0" y="0" width="30" height="16" rx="3" fill="#ffffff"/>
-      <circle cx="7" cy="16" r="4" fill="#333"/>
-      <circle cx="23" cy="16" r="4" fill="#333"/>
-      <rect x="3" y="2" width="10" height="7" fill="#61dafb" opacity="0.8"/>
-    </g>
-    <text x="300" y="50" font-size="42" font-weight="bold" text-anchor="middle" fill="#ffffff">🚗 nav-starter</text>
-    <text x="300" y="85" font-size="16" text-anchor="middle" fill="#e0f2fe">PWA Navigation • Mapbox • Offline Ready</text>
-  </svg>
+  <img src="https://capsule-render.vercel.app/api?type=rect&height=130&color=gradient&customColorList=0:0ea5e9,50:6366f1,100:06b6d4&text=🚗%20nav-starter&fontSize=40&fontColor=ffffff&fontAlignY=40&desc=PWA%20Navigation%20%7C%20Mapbox%20%7C%20Offline%20Ready&descFontSize=14&descColor=e0f2fe&descAlignY=85" alt="nav-starter Banner" />
 </div>
 
 ---
@@ -109,41 +91,6 @@ E-commerce platform driven by AI: automated sourcing, scoring, pricing, and publ
 ## GitHub Stats
 
 <p align="center">
-  <!-- Animated driving indicator -->
-  <svg width="300" height="80" viewBox="0 0 300 80" style="margin: 20px auto; display: block;">
-    <!-- Road -->
-    <defs>
-      <style>
-        @keyframes drive {
-          0% { transform: translateX(-30px); }
-          100% { transform: translateX(270px); }
-        }
-        .car {
-          animation: drive 4s infinite ease-in-out;
-        }
-      </style>
-    </defs>
-    
-    <!-- Track line -->
-    <line x1="0" y1="40" x2="300" y2="40" stroke="#0ea5e9" stroke-width="2" stroke-dasharray="5,5" opacity="0.5"/>
-    
-    <!-- Start point (Origin) -->
-    <circle cx="10" cy="40" r="4" fill="#10b981"/>
-    <text x="10" y="58" font-size="10" text-anchor="middle" fill="#10b981">Start</text>
-    
-    <!-- End point (Destination) -->
-    <circle cx="290" cy="40" r="4" fill="#ef4444"/>
-    <text x="290" y="58" font-size="10" text-anchor="middle" fill="#ef4444">End</text>
-    
-    <!-- Animated car -->
-    <g class="car" transform="translate(0, 0)">
-      <rect x="0" y="30" width="24" height="14" rx="2" fill="#0ea5e9"/>
-      <circle cx="6" cy="45" r="3" fill="#333"/>
-      <circle cx="18" cy="45" r="3" fill="#333"/>
-      <rect x="2" y="32" width="8" height="6" fill="#61dafb" opacity="0.7"/>
-    </g>
-  </svg>
-  
   <img src="https://github-profile-summary-cards.vercel.app/api/cards/stats?username=El-hadj10&theme=github_dark" alt="GitHub Stats" />
   <img src="https://github-profile-summary-cards.vercel.app/api/cards/repos-per-language?username=El-hadj10&theme=github_dark" alt="Top Languages" />
 </p>
