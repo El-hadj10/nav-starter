@@ -27,5 +27,39 @@ dist-ssr
 
 # Local Python environment
 .venv
+.env
+.env.local
+.env.*.local
+backend/.env
+backend/.env.local
+
+# Sensitive documents & roadmaps (private planning)
 LAUNCH_ROADMAP.md
 VENDRE_ETAPES.md
+PERSONALIZATION.md
+
+# Configuration & Secrets
+config.local.*
+.secrets/
+secrets/
+credentials/
+keys/
+tokens/
+
+# Logs & debug
+*.log
+debug-logs/
+.log/
+
+# IDE & OS - local configs
+.vscode/settings.json
+.vscode/launch.json.local
+.idea/
+.DS_Store
+
+# Database & cache (local development)
+*.db
+*.sqlite
+.cache/
+temp/
+tmp/
