@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="220" viewBox="0 0 1200 220" role="img" aria-label="Featured Navigation Apps animated car banner">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0b1220" />
+      <stop offset="50%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#111827" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0ea5e9" />
+      <stop offset="100%" stop-color="#22d3ee" />
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="220" rx="18" fill="url(#bg)" />
+
+  <g opacity="0.22">
+    <circle cx="120" cy="48" r="2" fill="#93c5fd" />
+    <circle cx="220" cy="28" r="1.5" fill="#bae6fd" />
+    <circle cx="350" cy="56" r="1.5" fill="#93c5fd" />
+    <circle cx="520" cy="36" r="2" fill="#e0f2fe" />
+    <circle cx="740" cy="30" r="1.2" fill="#93c5fd" />
+    <circle cx="860" cy="54" r="1.8" fill="#bae6fd" />
+    <circle cx="1030" cy="34" r="1.5" fill="#93c5fd" />
+  </g>
+
+  <g>
+    <text x="58" y="86" fill="#e0f2fe" font-size="36" font-family="Verdana, Geneva, sans-serif" font-weight="700">
+      Featured: Navigation Apps
+    </text>
+    <text x="58" y="114" fill="#67e8f9" font-size="15" font-family="Verdana, Geneva, sans-serif" opacity="0.92">
+      PWA Navigation | Mapbox | Offline Ready
+    </text>
+  </g>
+
+  <g transform="translate(0 0)">
+    <rect x="0" y="150" width="1200" height="44" fill="#1f2937"/>
+    <rect x="0" y="150" width="1200" height="2" fill="#334155"/>
+
+    <g opacity="0.8">
+      <rect x="0" y="170" width="80" height="4" fill="#cbd5e1">
+        <animate attributeName="x" from="0" to="-120" dur="1.2s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="140" y="170" width="80" height="4" fill="#cbd5e1">
+        <animate attributeName="x" from="140" to="20" dur="1.2s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="280" y="170" width="80" height="4" fill="#cbd5e1">
+        <animate attributeName="x" from="280" to="160" dur="1.2s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="420" y="170" width="80" height="4" fill="#cbd5e1">
+        <animate attributeName="x" from="420" to="300" dur="1.2s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="560" y="170" width="80" height="4" fill="#cbd5e1">
+        <animate attributeName="x" from="560" to="440" dur="1.2s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="700" y="170" width="80" height="4" fill="#cbd5e1">
+        <animate attributeName="x" from="700" to="580" dur="1.2s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="840" y="170" width="80" height="4" fill="#cbd5e1">
+        <animate attributeName="x" from="840" to="720" dur="1.2s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="980" y="170" width="80" height="4" fill="#cbd5e1">
+        <animate attributeName="x" from="980" to="860" dur="1.2s" repeatCount="indefinite"/>
+      </rect>
+      <rect x="1120" y="170" width="80" height="4" fill="#cbd5e1">
+        <animate attributeName="x" from="1120" to="1000" dur="1.2s" repeatCount="indefinite"/>
+      </rect>
+    </g>
+  </g>
+
+  <g filter="url(#glow)">
+    <g transform="translate(-180 0)">
+      <animateTransform attributeName="transform" type="translate" from="-180 0" to="1240 0" dur="4.5s" repeatCount="indefinite"/>
+
+      <rect x="0" y="126" width="120" height="28" rx="10" fill="url(#accent)"/>
+      <path d="M22 126 L45 104 L84 104 L103 126 Z" fill="#38bdf8"/>
+      <rect x="48" y="109" width="28" height="13" rx="2" fill="#082f49" opacity="0.8"/>
+      <rect x="78" y="109" width="20" height="13" rx="2" fill="#082f49" opacity="0.8"/>
+
+      <circle cx="30" cy="156" r="12" fill="#0f172a"/>
+      <circle cx="30" cy="156" r="6" fill="#94a3b8"/>
+      <circle cx="92" cy="156" r="12" fill="#0f172a"/>
+      <circle cx="92" cy="156" r="6" fill="#94a3b8"/>
+
+      <circle cx="116" cy="135" r="3" fill="#f8fafc" opacity="0.85"/>
+      <rect x="5" y="135" width="6" height="4" rx="1" fill="#f97316"/>
+    </g>
+  </g>
+</svg>

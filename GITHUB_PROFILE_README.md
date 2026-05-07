@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD033 -->
+
 <h1 align="center">Nour — El-hadj10</h1>
 
 <!-- Animated Banner: World Map Navigation -->
@@ -43,7 +45,7 @@ I build useful, readable, and robust systems — fast delivery, durable architec
 <div align="center">
   <h2>🗺️ Featured: Navigation Apps</h2>
   
-  <img src="https://capsule-render.vercel.app/api?type=rect&height=130&color=gradient&customColorList=0:0ea5e9,50:6366f1,100:06b6d4&text=🚗%20nav-starter&fontSize=40&fontColor=ffffff&fontAlignY=40&desc=PWA%20Navigation%20%7C%20Mapbox%20%7C%20Offline%20Ready&descFontSize=14&descColor=e0f2fe&descAlignY=85" alt="nav-starter Banner" />
+  <img src="docs/assets/featured-navigation-banner.svg" alt="nav-starter Animated Car Banner" />
 </div>
 
 ---
@@ -69,7 +71,7 @@ E-commerce platform driven by AI: automated sourcing, scoring, pricing, and publ
 ## Tech Stack
 
 | Domain | Tools |
-|---|---|
+| --- | --- |
 | **Frontend** | React, Next.js 14, TypeScript, Vite, Tailwind |
 | **Backend** | FastAPI, SQLAlchemy, Pydantic, Node.js/Express |
 | **AI / Automation** | Python multi-agent, OpenAI, Anthropic |
