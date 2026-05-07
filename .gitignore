@@ -27,3 +27,5 @@ dist-ssr
 
 # Local Python environment
 .venv
+LAUNCH_ROADMAP.md
+VENDRE_ETAPES.md
