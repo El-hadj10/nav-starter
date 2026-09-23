@@ -4,8 +4,40 @@ import mapboxgl from 'mapbox-gl'
 import './App.css'
 import { formatClock, computeDistanceKm, computeLiveEta } from './lib/navigation'
 import { type Locale, messages } from './lib/i18n'
+import {
+  accentPalettes,
+  applyThemeToDocument,
+  persistThemePreferences,
+  readThemePreferences,
+  resolveDarkMode,
+  type AccentId,
+  type ThemeMode,
+  type ThemePreferences,
+} from './lib/theme'
+import { buildApiUrl } from './lib/apiUrl'
+import {
+  distanceToReportKm,
+  filterReports,
+  isReportExpiringSoon,
+  reportFilterDistances,
+  reportTimeLeft,
+  reportTypeIcons,
+  reportTypeLabelKey,
+  reportTypes,
+  type Report,
+  type ReportType,
+} from './lib/reports'
+import {
+  createDestination,
+  deleteDestination,
+  fetchDestinations,
+  parseDestinationRecord,
+  updateDestination,
+  type DestinationInput,
+  type DestinationRecord,
+} from './lib/adminApi'
 
-type TabId = 'discover' | 'journeys' | 'saved' | 'profile'
+type TabId = 'discover' | 'journeys' | 'saved' | 'profile' | 'admin'
 type TravelMode = 'drive' | 'transit' | 'walk'
 type SearchStatus = 'idle' | 'loading' | 'ready' | 'error'
 type RouteStatus = 'idle' | 'loading' | 'ready' | 'error'
@@ -60,13 +92,15 @@ type SessionUser = {
   name: string
 }
 
-const configuredApiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/$/, '')
 const mapboxPublicToken = (import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN || '').trim()
 
 const favoriteStorageKey = 'nav-starter.favorite-destinations'
 const historyStorageKey = 'nav-starter.recent-destinations'
 const tokenStorageKey = 'nav-starter.jwt'
 const localeStorageKey = 'nav-starter.locale'
+
+const MAP_STYLE_DARK = 'mapbox://styles/mapbox/navigation-night-v1'
+const MAP_STYLE_LIGHT = 'mapbox://styles/mapbox/navigation-day-v1'
 
 const defaultOrigin: Coordinates = { latitude: 5.3207, longitude: -4.0161 }
 
@@ -143,11 +177,17 @@ const baseDestinations: Destination[] = [
   },
 ]
 
-function buildApiUrl(pathname: string): URL {
-  if (configuredApiBaseUrl) {
-    return new URL(pathname, `${configuredApiBaseUrl}/`)
+/** Couleur fixe par type de signalement (indépendante de l'accent pour rester lisible). */
+function reportMarkerColor(type: ReportType): string {
+  const colors: Record<ReportType, string> = {
+    roadworks: '#f59e0b',
+    road_closed: '#ef4444',
+    camera: '#8b5cf6',
+    slowdown: '#f97316',
+    accident: '#dc2626',
+    hazard: '#eab308',
   }
-  return new URL(pathname, window.location.origin)
+  return colors[type]
 }
 
 function readStoredIds(storageKey: string, fallback: string[]) {
@@ -190,6 +230,12 @@ function App() {
   const [locale, setLocale] = useState<Locale>(() => parseLocale(window.localStorage.getItem(localeStorageKey)))
   const t = messages[locale]
 
+  const [themePreferences, setThemePreferences] = useState<ThemePreferences>(() => readThemePreferences())
+  const [systemPrefersDark, setSystemPrefersDark] = useState(
+    () => window.matchMedia('(prefers-color-scheme: dark)').matches,
+  )
+  const [mapStyleEpoch, setMapStyleEpoch] = useState(0)
+
   const [activeTab, setActiveTab] = useState<TabId>('discover')
   const [travelMode, setTravelMode] = useState<TravelMode>('drive')
   const [query, setQuery] = useState('')
@@ -220,14 +266,49 @@ function App() {
   const [passwordInput, setPasswordInput] = useState('NavStarter123!')
   const [token, setToken] = useState(() => window.localStorage.getItem(tokenStorageKey) || '')
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null)
+  const [userRole, setUserRole] = useState<'user' | 'admin' | null>(null)
+
+  const [adminDestinations, setAdminDestinations] = useState<DestinationRecord[]>([])
+  const [adminLoading, setAdminLoading] = useState(false)
+  const [adminError, setAdminError] = useState('')
+  const [adminNotice, setAdminNotice] = useState('')
+  const [adminForm, setAdminForm] = useState<DestinationInput | null>(null)
+  const [adminEditingId, setAdminEditingId] = useState<string | null>(null)
+  const [adminSaving, setAdminSaving] = useState(false)
+
+  const [reports, setReports] = useState<Report[]>([])
+  const [reportsLoading, setReportsLoading] = useState(false)
+  const [reportsError, setReportsError] = useState('')
+  const [reportPickerOpen, setReportPickerOpen] = useState(false)
+  const [reportComment, setReportComment] = useState('')
+  const [reportSubmitting, setReportSubmitting] = useState(false)
+  const [reportNotice, setReportNotice] = useState('')
+  const [reportMaxDistanceKm, setReportMaxDistanceKm] = useState<number | null>(null)
+  const [reportTypeFilter, setReportTypeFilter] = useState<Set<ReportType>>(new Set())
 
   const mapNodeRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const originMarkerRef = useRef<mapboxgl.Marker | null>(null)
   const destinationMarkerRef = useRef<mapboxgl.Marker | null>(null)
+  const markerAccentRef = useRef<string>('')
+  const reportMarkersRef = useRef<mapboxgl.Marker[]>([])
+  const mapStyleRef = useRef<string>(
+    resolveDarkMode(readThemePreferences().mode, window.matchMedia('(prefers-color-scheme: dark)').matches)
+      ? MAP_STYLE_DARK
+      : MAP_STYLE_LIGHT,
+  )
   const [mapError, setMapError] = useState('')
 
   const routeOrigin = currentCoordinates ?? defaultOrigin
+  const isDark = resolveDarkMode(themePreferences.mode, systemPrefersDark)
+  const accentBase = accentPalettes[themePreferences.accent].base
+  const accentSoft = accentPalettes[themePreferences.accent].soft
+
+  const filteredReports = useMemo(
+    () =>
+      filterReports(reports, { maxDistanceKm: reportMaxDistanceKm, types: reportTypeFilter }, routeOrigin),
+    [reports, reportMaxDistanceKm, reportTypeFilter, routeOrigin],
+  )
 
   const destinations = useMemo(() => baseDestinations.map((destination) => {
     const directDistanceKm = computeDistanceKm(routeOrigin, destination.coordinates)
@@ -299,11 +380,98 @@ function App() {
     journeys: t.tabJourneys,
     saved: t.tabSaved,
     profile: t.tabProfile,
+    admin: t.tabAdmin,
   }
 
   useEffect(() => {
     window.localStorage.setItem(localeStorageKey, locale)
   }, [locale])
+
+  useEffect(() => {
+    applyThemeToDocument(themePreferences, systemPrefersDark)
+    persistThemePreferences(themePreferences)
+  }, [themePreferences, systemPrefersDark])
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const onChange = (event: MediaQueryListEvent) => setSystemPrefersDark(event.matches)
+    mediaQuery.addEventListener('change', onChange)
+    return () => mediaQuery.removeEventListener('change', onChange)
+  }, [])
+
+  useEffect(() => {
+    let timer: number | undefined
+
+    const load = async () => {
+      try {
+        const endpoint = buildApiUrl('/api/reports')
+        const response = await fetch(endpoint.toString())
+        if (!response.ok) throw new Error('Reports unavailable')
+        const payload = (await response.json()) as { reports: Report[] }
+        setReports(payload.reports)
+        setReportsError('')
+      } catch {
+        setReportsError('offline')
+      } finally {
+        setReportsLoading(false)
+      }
+    }
+
+    setReportsLoading(true)
+    void load()
+    timer = window.setInterval(load, 30_000)
+
+    return () => window.clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    if (!token || userRole !== 'admin') {
+      setAdminDestinations([])
+      setAdminForm(null)
+      setAdminEditingId(null)
+      setAdminError('')
+      setAdminNotice('')
+      return
+    }
+
+    const controller = new AbortController()
+    setAdminLoading(true)
+    setAdminError('')
+
+    void (async () => {
+      try {
+        const records = await fetchDestinations(token)
+        setAdminDestinations(records)
+      } catch (error) {
+        if ((error as Error).name === 'AbortError') return
+        setAdminError((error as Error).message || t.adminLoadFailed)
+      } finally {
+        setAdminLoading(false)
+      }
+    })()
+
+    return () => controller.abort()
+  }, [token, userRole, t.adminLoadFailed])
+
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]')
+    meta?.setAttribute('content', document.documentElement.dataset.theme === 'light' ? '#eef3f9' : '#07111d')
+  }, [themePreferences, systemPrefersDark])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !mapboxPublicToken) {
+      return
+    }
+    const nextStyle = isDark ? MAP_STYLE_DARK : MAP_STYLE_LIGHT
+    if (mapStyleRef.current === nextStyle) {
+      return
+    }
+    mapStyleRef.current = nextStyle
+    map.setStyle(nextStyle)
+    // Les sources/couches ajoutées au style sont perdues après setStyle : on les ré-ajoute au style.load
+    map.once('style.load', () => setMapStyleEpoch((epoch) => epoch + 1))
+  }, [isDark])
 
   useEffect(() => {
     window.localStorage.setItem(favoriteStorageKey, JSON.stringify(favoriteIds))
@@ -343,11 +511,12 @@ function App() {
           throw new Error('Session expired')
         }
 
-        const payload = (await response.json()) as { user?: { sub?: string } }
+        const payload = (await response.json()) as { user?: { sub?: string; role?: string } }
         setSessionUser({
           email: payload.user?.sub || emailInput,
           name: 'Demo Navigator',
         })
+        setUserRole(payload.user?.role === 'admin' ? 'admin' : 'user')
         setAuthStatus('authenticated')
       } catch (error) {
         if ((error as Error).name === 'AbortError') return
@@ -565,7 +734,7 @@ function App() {
     mapboxgl.accessToken = mapboxPublicToken
     const map = new mapboxgl.Map({
       container: mapNodeRef.current,
-      style: 'mapbox://styles/mapbox/navigation-night-v1',
+      style: mapStyleRef.current,
       center: [routeOrigin.longitude, routeOrigin.latitude],
       zoom: 11,
       attributionControl: false,
@@ -595,14 +764,22 @@ function App() {
     const originLngLat: [number, number] = [routeOrigin.longitude, routeOrigin.latitude]
     const destinationLngLat: [number, number] = [selectedDestination.coordinates.longitude, selectedDestination.coordinates.latitude]
 
+    if (markerAccentRef.current !== accentBase) {
+      originMarkerRef.current?.remove()
+      destinationMarkerRef.current?.remove()
+      originMarkerRef.current = null
+      destinationMarkerRef.current = null
+      markerAccentRef.current = accentBase
+    }
+
     if (!originMarkerRef.current) {
-      originMarkerRef.current = new mapboxgl.Marker({ color: '#8cf7a7' }).setLngLat(originLngLat).addTo(map)
+      originMarkerRef.current = new mapboxgl.Marker({ color: accentSoft }).setLngLat(originLngLat).addTo(map)
     } else {
       originMarkerRef.current.setLngLat(originLngLat)
     }
 
     if (!destinationMarkerRef.current) {
-      destinationMarkerRef.current = new mapboxgl.Marker({ color: '#47ffe5' }).setLngLat(destinationLngLat).addTo(map)
+      destinationMarkerRef.current = new mapboxgl.Marker({ color: accentBase }).setLngLat(destinationLngLat).addTo(map)
     } else {
       destinationMarkerRef.current.setLngLat(destinationLngLat)
     }
@@ -619,6 +796,9 @@ function App() {
     const existingSource = map.getSource('route-line') as mapboxgl.GeoJSONSource | undefined
     if (existingSource) {
       existingSource.setData(lineData as never)
+      if (map.getLayer('route-line')) {
+        map.setPaintProperty('route-line', 'line-color', accentBase)
+      }
     } else if (map.isStyleLoaded()) {
       map.addSource('route-line', { type: 'geojson', data: lineData as never })
       map.addLayer({
@@ -626,7 +806,7 @@ function App() {
         type: 'line',
         source: 'route-line',
         paint: {
-          'line-color': '#47ffe5',
+          'line-color': accentBase,
           'line-width': 4,
           'line-opacity': 0.9,
         },
@@ -636,7 +816,33 @@ function App() {
     const bounds = new mapboxgl.LngLatBounds(originLngLat, originLngLat)
     routeMetrics.geometry.forEach(([lng, lat]) => bounds.extend([lng, lat]))
     map.fitBounds(bounds, { padding: 70, duration: 650, maxZoom: 13 })
-  }, [routeMetrics, routeOrigin, selectedDestination.coordinates])
+  }, [routeMetrics, routeOrigin, selectedDestination.coordinates, accentBase, accentSoft, mapStyleEpoch])
+
+  // Marqueurs des signalements communautaires sur la carte
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !mapboxPublicToken) {
+      return
+    }
+
+    reportMarkersRef.current.forEach((marker) => marker.remove())
+    reportMarkersRef.current = filteredReports.map((report) => {
+      const marker = new mapboxgl.Marker({ color: reportMarkerColor(report.type) })
+        .setLngLat([report.longitude, report.latitude])
+        .setPopup(
+          new mapboxgl.Popup({ offset: 12 }).setHTML(
+            `<strong>${reportTypeIcons[report.type]} ${report.type}</strong>${report.comment ? `<br>${report.comment}` : ''}`,
+          ),
+        )
+        .addTo(map)
+      return marker
+    })
+
+    return () => {
+      reportMarkersRef.current.forEach((marker) => marker.remove())
+      reportMarkersRef.current = []
+    }
+  }, [filteredReports, mapStyleEpoch])
 
   const handleInstall = async () => {
     if (!installPrompt) return
@@ -708,11 +914,10 @@ function App() {
       if (!response.ok) {
         const payload = (await response.json().catch(() => ({}))) as { error?: string }
         throw new Error(payload.error || 'Login failed')
-      }
-
-      const payload = (await response.json()) as { token: string; user: SessionUser }
+      }        const payload = (await response.json()) as { token: string; role: 'user' | 'admin'; user: SessionUser }
       setToken(payload.token)
       setSessionUser(payload.user)
+      setUserRole(payload.role)
       setAuthStatus('authenticated')
     } catch (error) {
       setAuthStatus('error')
@@ -723,8 +928,160 @@ function App() {
   const handleLogout = () => {
     setToken('')
     setSessionUser(null)
+    setUserRole(null)
     setAuthStatus('idle')
     setAuthError('')
+  }
+
+  const startCreateDestination = () => {
+    setAdminEditingId(null)
+    setAdminNotice('')
+    setAdminForm({
+      name: '',
+      area: '',
+      tag: 'Other',
+      description: '',
+      traffic: 'Moderate',
+      parking: '',
+      offlinePack: '',
+      latitude: routeOrigin.latitude,
+      longitude: routeOrigin.longitude,
+      steps: [],
+      sortOrder: adminDestinations.length + 1,
+    })
+  }
+
+  const startEditDestination = (record: DestinationRecord) => {
+    setAdminEditingId(record.id)
+    setAdminNotice('')
+    setAdminForm(parseDestinationRecord(record))
+  }
+
+  const handleSaveDestination = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!adminForm || !token) return
+
+    setAdminSaving(true)
+    setAdminError('')
+    setAdminNotice('')
+
+    try {
+      if (adminEditingId) {
+        const updated = await updateDestination(token, adminEditingId, adminForm)
+        setAdminDestinations((current) => current.map((entry) => (entry.id === updated.id ? updated : entry)))
+        setAdminNotice(t.adminSavedUpdated)
+      } else {
+        const created = await createDestination(token, adminForm)
+        setAdminDestinations((current) => [...current, created])
+        setAdminNotice(t.adminSavedCreated)
+      }
+      setAdminForm(null)
+      setAdminEditingId(null)
+    } catch (error) {
+      setAdminError((error as Error).message || t.adminSaveFailed)
+    } finally {
+      setAdminSaving(false)
+    }
+  }
+
+  const handleDeleteDestination = async (id: string) => {
+    if (!token) return
+
+    setAdminError('')
+    setAdminNotice('')
+
+    try {
+      await deleteDestination(token, id)
+      setAdminDestinations((current) => current.filter((entry) => entry.id !== id))
+      if (adminEditingId === id) {
+        setAdminForm(null)
+        setAdminEditingId(null)
+      }
+      setAdminNotice(t.adminSavedDeleted)
+    } catch (error) {
+      setAdminError((error as Error).message || t.adminSaveFailed)
+    }
+  }
+
+  const submitReport = async (type: ReportType) => {
+    if (!token) {
+      setReportNotice(t.reportLoginRequired)
+      return
+    }
+
+    setReportSubmitting(true)
+    setReportNotice('')
+
+    try {
+      const endpoint = buildApiUrl('/api/reports')
+      const response = await fetch(endpoint.toString(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          type,
+          latitude: routeOrigin.latitude,
+          longitude: routeOrigin.longitude,
+          comment: reportComment.trim(),
+        }),
+      })
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as { error?: string }
+        throw new Error(payload.error || 'Report failed')
+      }
+
+      const created = (await response.json()) as Report
+      setReports((current) => [created, ...current])
+      setReportNotice(t.reportSent)
+      setReportPickerOpen(false)
+      setReportComment('')
+    } catch (error) {
+      setReportNotice((error as Error).message)
+    } finally {
+      setReportSubmitting(false)
+    }
+  }
+
+  const confirmReport = async (id: number) => {
+    if (!token) {
+      setReportNotice(t.reportLoginRequired)
+      return
+    }
+
+    try {
+      const endpoint = buildApiUrl(`/api/reports/${id}/confirm`)
+      const response = await fetch(endpoint.toString(), {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!response.ok) throw new Error('Confirm failed')
+      const updated = (await response.json()) as Report
+      setReports((current) => current.map((entry) => (entry.id === updated.id ? updated : entry)))
+    } catch {
+      setReportNotice(t.reportLoginRequired)
+    }
+  }
+
+  const clearReport = async (id: number) => {
+    if (!token) {
+      setReportNotice(t.reportLoginRequired)
+      return
+    }
+
+    try {
+      const endpoint = buildApiUrl(`/api/reports/${id}/clear`)
+      const response = await fetch(endpoint.toString(), {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!response.ok) throw new Error('Clear failed')
+      setReports((current) => current.filter((entry) => entry.id !== id))
+    } catch {
+      setReportNotice(t.reportLoginRequired)
+    }
   }
 
   const renderDiscoverScreen = () => (
@@ -772,6 +1129,151 @@ function App() {
               {t[mode.labelKey]}
             </button>
           ))}
+        </div>
+
+        <div className="reports-block">
+          <div className="section-header-row compact-header">
+            <div>
+              <p className="micro-label">{t.reportSectionTitle}</p>
+              <strong>{filteredReports.length} {t.reportSectionTitle.toLowerCase()}</strong>
+            </div>
+            <button
+              type="button"
+              className={reportPickerOpen ? 'install-button' : 'install-button'}
+              onClick={() => setReportPickerOpen((open) => !open)}
+            >
+              {t.reportButton}
+            </button>
+          </div>
+
+          {!token ? <p className="empty-state">{t.reportLoginRequired}</p> : null}
+          {reportNotice ? <p className="inline-loading">{reportNotice}</p> : null}
+
+          {reportPickerOpen ? (
+            <div className="report-picker">
+              <div className="report-type-grid">
+                {reportTypes.map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    className="report-type-button"
+                    onClick={() => void submitReport(type)}
+                    disabled={reportSubmitting}
+                  >
+                    <span className="report-type-icon">{reportTypeIcons[type]}</span>
+                    <span>{t[reportTypeLabelKey(type) as keyof typeof t] as string}</span>
+                  </button>
+                ))}
+              </div>
+              <input
+                type="text"
+                value={reportComment}
+                onChange={(event) => setReportComment(event.target.value)}
+                placeholder={t.reportComment}
+                maxLength={280}
+              />
+            </div>
+          ) : null}
+
+          {reportsLoading ? <div className="skeleton-row" /> : null}
+          {reportsError ? <p className="empty-state">{t.reportOffline}</p> : null}
+
+          <div className="report-filters">
+            <div className="filter-chip-row" aria-label={t.reportFilterDistance}>
+              <button
+                type="button"
+                className={reportMaxDistanceKm === null ? 'filter-chip is-active' : 'filter-chip'}
+                onClick={() => setReportMaxDistanceKm(null)}
+              >
+                {t.reportFilterAll}
+              </button>
+              {reportFilterDistances.map((km) => (
+                <button
+                  key={km}
+                  type="button"
+                  className={reportMaxDistanceKm === km ? 'filter-chip is-active' : 'filter-chip'}
+                  onClick={() => setReportMaxDistanceKm(km)}
+                >
+                  ≤ {km} km
+                </button>
+              ))}
+            </div>
+            <div className="filter-chip-row" aria-label={t.reportFilterTypes}>
+              <button
+                type="button"
+                className={reportTypeFilter.size === 0 ? 'filter-chip is-active' : 'filter-chip'}
+                onClick={() => setReportTypeFilter(new Set())}
+              >
+                {t.reportFilterAll}
+
+              </button>
+              {reportTypes.map((type) => {
+                const isActive = reportTypeFilter.has(type)
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    className={isActive ? 'filter-chip is-active' : 'filter-chip'}
+                    onClick={() =>
+                      setReportTypeFilter((current) => {
+                        const next = new Set(current)
+                        if (next.has(type)) {
+                          next.delete(type)
+                        } else {
+                          next.add(type)
+                        }
+                        return next
+                      })
+                    }
+                  >
+                    {reportTypeIcons[type]} {t[reportTypeLabelKey(type) as keyof typeof t] as string}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="reports-list">
+            {filteredReports.map((report) => {
+              const distanceKm = distanceToReportKm(routeOrigin, report)
+              const timeLeft = reportTimeLeft(report.expiresAt)
+              const expiringSoon = isReportExpiringSoon(report.expiresAt)
+              const labelKey = reportTypeLabelKey(report.type) as keyof typeof t
+
+              return (
+                <article key={report.id} className="result-card report-card">
+                  <div className="result-main">
+                    <div>
+                      <strong>
+                        {reportTypeIcons[report.type]} {t[labelKey] as string}
+                      </strong>
+                      <p>
+                        {distanceKm} km · {report.confirmations} ✓
+                        {report.comment ? ` · ${report.comment}` : ''}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="result-meta">
+                    <span className={expiringSoon ? 'report-expiring' : undefined}>
+                      {timeLeft ? `${timeLeft.hours}h${String(timeLeft.minutes).padStart(2, '0')}` : '--'}
+                    </span>
+                    <div className="report-actions">
+                      <button type="button" className="ghost-button inline-ghost" onClick={() => void confirmReport(report.id)}>
+                        {t.reportConfirm}
+                      </button>
+                      <button type="button" className="ghost-button inline-ghost" onClick={() => void clearReport(report.id)}>
+                        {t.reportClear}
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              )
+            })}
+            {!reportsLoading && reports.length > 0 && filteredReports.length === 0 ? (
+              <p className="empty-state">{t.reportFilterEmpty}</p>
+            ) : null}
+            {!reportsLoading && reports.length === 0 ? <p className="empty-state">{t.reportEmpty}</p> : null}
+          </div>
         </div>
 
         <div className="results-list">
@@ -959,10 +1461,162 @@ function App() {
     </section>
   )
 
+  const renderAdminForm = () => {
+    if (!adminForm) return null
+
+    return (
+      <form className="admin-form" onSubmit={handleSaveDestination}>
+        <div className="admin-form-grid">
+          <label>
+            <span>{t.adminFieldName}</span>
+            <input
+              value={adminForm.name}
+              onChange={(event) => setAdminForm({ ...adminForm, name: event.target.value })}
+              required
+            />
+          </label>
+          <label>
+            <span>{t.adminFieldArea}</span>
+            <input
+              value={adminForm.area}
+              onChange={(event) => setAdminForm({ ...adminForm, area: event.target.value })}
+              required
+            />
+          </label>
+          <label>
+            <span>{t.adminFieldTag}</span>
+            <input value={adminForm.tag ?? ''} onChange={(event) => setAdminForm({ ...adminForm, tag: event.target.value })} />
+          </label>
+          <label>
+            <span>{t.adminFieldTraffic}</span>
+            <select
+              value={adminForm.traffic ?? 'Moderate'}
+              onChange={(event) =>
+                setAdminForm({ ...adminForm, traffic: event.target.value as DestinationInput['traffic'] })
+              }
+            >
+              <option value="Low">Low</option>
+              <option value="Moderate">Moderate</option>
+              <option value="Heavy">Heavy</option>
+            </select>
+          </label>
+          <label>
+            <span>{t.adminFieldLatitude}</span>
+            <input
+              type="number"
+              step="any"
+              value={adminForm.latitude}
+              onChange={(event) => setAdminForm({ ...adminForm, latitude: Number(event.target.value) })}
+              required
+            />
+          </label>
+          <label>
+            <span>{t.adminFieldLongitude}</span>
+            <input
+              type="number"
+              step="any"
+              value={adminForm.longitude}
+              onChange={(event) => setAdminForm({ ...adminForm, longitude: Number(event.target.value) })}
+              required
+            />
+          </label>
+        </div>
+        <label>
+          <span>{t.adminFieldDescription}</span>
+          <textarea
+            rows={2}
+            value={adminForm.description ?? ''}
+            onChange={(event) => setAdminForm({ ...adminForm, description: event.target.value })}
+          />
+        </label>
+        <div className="admin-form-grid">
+          <label>
+            <span>{t.adminFieldParking}</span>
+            <input
+              value={adminForm.parking ?? ''}
+              onChange={(event) => setAdminForm({ ...adminForm, parking: event.target.value })}
+            />
+          </label>
+          <label>
+            <span>{t.adminFieldOfflinePack}</span>
+            <input
+              value={adminForm.offlinePack ?? ''}
+              onChange={(event) => setAdminForm({ ...adminForm, offlinePack: event.target.value })}
+            />
+          </label>
+        </div>
+        <div className="admin-form-actions">
+          <button type="submit" className="install-button" disabled={adminSaving}>
+            {adminSaving ? t.adminSaving : adminEditingId ? t.adminUpdate : t.adminCreate}
+          </button>
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => {
+              setAdminForm(null)
+              setAdminEditingId(null)
+            }}
+          >
+            {t.adminCancel}
+          </button>
+        </div>
+      </form>
+    )
+  }
+
+  const renderAdminScreen = () => (
+    <section className="panel-card admin-card">
+      <div className="section-header-row">
+        <div>
+          <p className="micro-label">{t.adminLabel}</p>
+          <h2>{t.adminTitle}</h2>
+        </div>
+        {!adminForm ? (
+          <button type="button" className="install-button" onClick={startCreateDestination}>
+            {t.adminNew}
+          </button>
+        ) : null}
+      </div>
+
+      {adminLoading ? <p className="inline-loading">{t.adminLoading}</p> : null}
+      {adminError ? <p className="error-state">{adminError}</p> : null}
+      {adminNotice ? <p className="inline-loading">{adminNotice}</p> : null}
+
+      {renderAdminForm()}
+
+      {!adminForm && !adminLoading ? (
+        <div className="admin-list">
+          {adminDestinations.map((record) => (
+            <article key={record.id} className="result-card">
+              <div className="result-main">
+                <div>
+                  <strong>{record.name}</strong>
+                  <p>
+                    {record.tag} · {record.area} · {record.traffic}
+                  </p>
+                </div>
+              </div>
+              <div className="admin-row-actions">
+                <button type="button" className="ghost-button" onClick={() => startEditDestination(record)}>
+                  {t.adminEdit}
+                </button>
+                <button type="button" className="ghost-button inline-ghost" onClick={() => void handleDeleteDestination(record.id)}>
+                  {t.adminDelete}
+                </button>
+              </div>
+            </article>
+          ))}
+          {adminDestinations.length === 0 ? <p className="empty-state">{t.adminEmpty}</p> : null}
+        </div>
+      ) : null}
+    </section>
+  )
+
   const renderScreen = () => {
     if (activeTab === 'discover') return renderDiscoverScreen()
     if (activeTab === 'journeys') return renderJourneyScreen()
     if (activeTab === 'saved') return renderSavedScreen()
+    if (activeTab === 'admin') return renderAdminScreen()
     return renderProfileScreen()
   }
 
@@ -1024,6 +1678,41 @@ function App() {
           {authError ? <p className="error-state">{authError}</p> : null}
         </div>
 
+        <div className="theme-panel">
+          <div className="theme-panel-header">
+            <p className="micro-label">{t.themeLabel}</p>
+            <strong>{isDark ? t.themeModeDark : t.themeModeLight}</strong>
+          </div>
+          <div className="mode-switcher">
+            {(['system', 'light', 'dark'] as ThemeMode[]).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                className={mode === themePreferences.mode ? 'mode-button is-active' : 'mode-button'}
+                onClick={() => setThemePreferences((current) => ({ ...current, mode }))}
+                data-testid={`theme-mode-${mode}`}
+              >
+                {mode === 'system' ? t.themeModeSystem : mode === 'light' ? t.themeModeLight : t.themeModeDark}
+              </button>
+            ))}
+          </div>
+          <div className="accent-row" role="group" aria-label={t.accentLabel}>
+            {(Object.keys(accentPalettes) as AccentId[]).map((accentId) => (
+              <button
+                key={accentId}
+                type="button"
+                className={accentId === themePreferences.accent ? 'accent-swatch is-active' : 'accent-swatch'}
+                style={{
+                  background: `linear-gradient(135deg, ${accentPalettes[accentId].base}, ${accentPalettes[accentId].soft})`,
+                }}
+                onClick={() => setThemePreferences((current) => ({ ...current, accent: accentId }))}
+                aria-label={accentPalettes[accentId].label}
+                title={accentPalettes[accentId].label}
+              />
+            ))}
+          </div>
+        </div>
+
         <div className="install-banner">
           <div>
             <p className="micro-label">{t.installStatus}</p>
@@ -1083,6 +1772,17 @@ function App() {
                 <span>{tabLabels[tabId]}</span>
               </button>
             ))}
+            {userRole === 'admin' ? (
+              <button
+                type="button"
+                className={activeTab === 'admin' ? 'tab-button is-active' : 'tab-button'}
+                onClick={() => setActiveTab('admin')}
+                data-testid="admin-tab"
+              >
+                <span>⚙</span>
+                <span>{tabLabels.admin}</span>
+              </button>
+            ) : null}
           </nav>
         </article>
 

@@ -10,8 +10,11 @@ This template is a **complete, battle-tested navigation application** ready for 
 - ✅ **Interactive Mapbox GL JS map** with live directions
 - ✅ **Multiple routing modes**: driving, transit, walking
 - ✅ **Geolocation + real-time ETA** with traffic estimation
-- ✅ **JWT authentication** (login + session validation)
+- ✅ **JWT authentication** with role-based access (`user` / `admin`)
 - ✅ **Favorites & recent history** (persisted locally)
+- ✅ **SQLite database + Admin dashboard** — full CRUD management of destinations, zero npm dependency (Node built-in `node:sqlite`)
+- ✅ **Theme system** — light/dark mode (with system detection) + 5 accent color palettes, fully token-based CSS
+- ✅ **Community reports (Waze-style)** — roadworks, road closed, speed camera, slowdown, accident, hazard. Auto-expiry per type, confirmations, clear, live map markers
 - ✅ **Bilingual support** (FR/EN, easily extended)
 - ✅ **Installable PWA** (Android Chrome + iOS Safari)
 - ✅ **Advanced service worker** (network-first for API, stale-while-revalidate for assets)
@@ -42,6 +45,15 @@ Perfect for building:
 
 ## ⚡ Quick Start
 
+**One-liner (Linux/macOS)** — installs, starts backend + frontend, opens the browser:
+
+```bash
+./launch-dev.sh
+```
+
+<details>
+<summary>Manual setup</summary>
+
 ```bash
 # 1. Install dependencies
 npm install
@@ -60,6 +72,12 @@ npm run dev             # Terminal 2: frontend on :5173
 # 5. Test the app
 # Visit http://localhost:5173/nav-starter/
 # Login with demo credentials (in backend/.env)
+
+# 6. Try the admin dashboard
+# Login with the ADMIN_EMAIL / ADMIN_PASSWORD from backend/.env
+# The Admin tab appears in the bottom navigation
+
+</details>
 ```
 
 ## 📋 What's Included
@@ -74,7 +92,11 @@ npm run dev             # Terminal 2: frontend on :5173
 
 ### Backend (`backend/`)
 - **Express proxy server** - Secure Mapbox API wrapper
-- **JWT auth** - Session validation with Bearer tokens
+- **JWT auth** - Role-based sessions (`user` demo account + `admin` account for the dashboard)
+- **SQLite database** (`node:sqlite`, no extra dependency) - Destinations stored and served from DB
+- **CRUD API** - `GET/POST/PUT/DELETE /api/destinations` (read public, writes admin-only)
+- **Community reports API** - `GET /api/reports` (public), `POST /api/reports` (auth), `POST /api/reports/:id/confirm`, `POST /api/reports/:id/clear` — auto-expiry per type, purge every 5 min
+- **Auto-seeded demo data** - 4 destinations created on first start
 - **CORS management** - Whitelist origins for security
 - **Health check** - Monitoring-friendly endpoint
 - **Deployment configs** - Render/Railway ready
@@ -142,6 +164,7 @@ Offline support: ✅ App loads, cached maps work, graceful fallback for routes
 
 - Mapbox API key is **never exposed** (backend proxy)
 - JWT tokens expire in **8 hours** (configurable)
+- Destination writes require the **admin role** (read is public)
 - CORS whitelist **blocks cross-origin abuse**
 - Demo credentials are **for local dev only**
 - All environment secrets go in `.env` (never committed)

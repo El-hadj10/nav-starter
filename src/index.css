@@ -1,25 +1,64 @@
-
 /*
   nav-starter - index.css
   Variables CSS globales, polices, couleurs, responsive, et reset de base.
+  Thématisation : tokens sémantiques communs + jeux de valeurs clair (light) / sombre (dark).
+  L'accent (--accent / --accent-soft) est injecté par src/lib/theme.ts selon la palette choisie.
 */
 
 :root {
+  /* ==== Tokens sémantiques communs (mutualisés clair/sombre) ==== */
+  --sans: 'Manrope', 'Segoe UI', sans-serif;
+  --heading: 'Space Grotesk', 'Segoe UI', sans-serif;
+  --mono: ui-monospace, Consolas, monospace;
+
+  /* Surfaces translucides au-dessus du fond */
+  --surface-raised: rgba(255, 255, 255, 0.06);
+  --surface-card: rgba(255, 255, 255, 0.05);
+  --surface-sunken: rgba(255, 255, 255, 0.04);
+  --surface-input: rgba(3, 13, 26, 0.74);
+  --border-soft: rgba(255, 255, 255, 0.08);
+  --border-faint: rgba(255, 255, 255, 0.06);
+  --accent-contrast: #062033;
+  --error-text: #fecaca;
+  --skeleton-tint: rgba(255, 255, 255, 0.06);
+  --skeleton-tint-strong: rgba(255, 255, 255, 0.14);
+
+  /* Accent par défaut (aurora), surchargeable inline par theme.ts */
+  --accent: #47ffe5;
+  --accent-soft: #8cf7a7;
+  --code-bg: rgba(255, 255, 255, 0.08);
+
+  /* ==== Jeu de valeurs sombre (défaut) ==== */
   --text: #d2deef;
   --text-h: #f6fbff;
   --text-soft: rgba(210, 222, 239, 0.78);
   --bg: #06111f;
   --border: rgba(160, 190, 222, 0.16);
-  --code-bg: rgba(255, 255, 255, 0.08);
-  --accent: #47ffe5;
-  --accent-soft: #8cf7a7;
   --shadow:
     rgba(0, 0, 0, 0.34) 0 24px 80px -30px,
     rgba(5, 16, 30, 0.45) 0 18px 40px -28px;
 
-  --sans: 'Manrope', 'Segoe UI', sans-serif;
-  --heading: 'Space Grotesk', 'Segoe UI', sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  /* Dégradés de fond du body (sombre) */
+  --body-gradient:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 12%, transparent), transparent 18%),
+    radial-gradient(circle at bottom right, rgba(84, 130, 255, 0.2), transparent 22%),
+    linear-gradient(180deg, #06111f 0%, #0a1a30 46%, #07111d 100%);
+
+  /* Dégradés et surfaces spécifiques sombre */
+  --intro-gradient:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 18%, transparent), transparent 28%),
+    linear-gradient(140deg, rgba(10, 22, 42, 0.96), rgba(17, 38, 63, 0.92));
+  --phone-gradient: linear-gradient(180deg, rgba(13, 29, 51, 0.98), rgba(8, 18, 34, 0.98));
+  --accent-surface-bg:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 14%, transparent), transparent 24%),
+    rgba(8, 18, 34, 0.72);
+  --emphasis-gradient: linear-gradient(180deg, color-mix(in srgb, var(--accent) 14%, transparent), rgba(255, 255, 255, 0.06));
+  --tab-active-gradient: linear-gradient(180deg, color-mix(in srgb, var(--accent) 16%, transparent), rgba(255, 255, 255, 0.1));
+  --map-overlay-bg: rgba(5, 16, 30, 0.8);
+  --badge-bg: color-mix(in srgb, var(--accent) 8%, transparent);
+  --remote-card-border: color-mix(in srgb, var(--accent) 22%, transparent);
+  --result-selected-border: color-mix(in srgb, var(--accent) 40%, transparent);
+  --result-selected-bg: color-mix(in srgb, var(--accent) 8%, transparent);
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
@@ -35,6 +74,50 @@
   }
 }
 
+/* ==== Jeu de valeurs clair ==== */
+:root[data-theme='light'] {
+  --text: #17253a;
+  --text-h: #0b1a2c;
+  --text-soft: rgba(23, 37, 58, 0.72);
+  --bg: #eef3f9;
+  --border: rgba(11, 26, 44, 0.14);
+  --shadow:
+    rgba(15, 34, 58, 0.16) 0 24px 60px -28px,
+    rgba(15, 34, 58, 0.08) 0 12px 30px -20px;
+
+  --surface-raised: rgba(255, 255, 255, 0.72);
+  --surface-card: rgba(255, 255, 255, 0.62);
+  --surface-sunken: rgba(255, 255, 255, 0.5);
+  --surface-input: rgba(255, 255, 255, 0.92);
+  --border-soft: rgba(11, 26, 44, 0.12);
+  --border-faint: rgba(11, 26, 44, 0.08);
+  --accent-contrast: #ffffff;
+  --error-text: #b4232a;
+  --code-bg: rgba(11, 26, 44, 0.07);
+  --skeleton-tint: rgba(11, 26, 44, 0.08);
+  --skeleton-tint-strong: rgba(11, 26, 44, 0.16);
+
+  --body-gradient:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 16%, transparent), transparent 20%),
+    radial-gradient(circle at bottom right, rgba(84, 130, 255, 0.14), transparent 24%),
+    linear-gradient(180deg, #f4f7fb 0%, #e8eef6 46%, #eef3f9 100%);
+
+  --intro-gradient:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 22%, transparent), transparent 30%),
+    linear-gradient(140deg, rgba(255, 255, 255, 0.95), rgba(233, 240, 248, 0.94));
+  --phone-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(240, 245, 250, 0.98));
+  --accent-surface-bg:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 18%, transparent), transparent 26%),
+    rgba(255, 255, 255, 0.8);
+  --emphasis-gradient: linear-gradient(180deg, color-mix(in srgb, var(--accent) 18%, transparent), rgba(255, 255, 255, 0.7));
+  --tab-active-gradient: linear-gradient(180deg, color-mix(in srgb, var(--accent) 22%, transparent), rgba(255, 255, 255, 0.65));
+  --map-overlay-bg: rgba(255, 255, 255, 0.86);
+  --badge-bg: color-mix(in srgb, var(--accent) 12%, transparent);
+  --remote-card-border: color-mix(in srgb, var(--accent) 30%, transparent);
+  --result-selected-border: color-mix(in srgb, var(--accent) 45%, transparent);
+  --result-selected-bg: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
 #root {
   width: min(1160px, calc(100% - 32px));
   margin: 0 auto;
@@ -45,10 +128,9 @@
 body {
   margin: 0;
   min-width: 320px;
-  background:
-    radial-gradient(circle at top left, rgba(71, 255, 229, 0.12), transparent 18%),
-    radial-gradient(circle at bottom right, rgba(84, 130, 255, 0.2), transparent 22%),
-    linear-gradient(180deg, #06111f 0%, #0a1a30 46%, #07111d 100%);
+  background: var(--body-gradient);
+  background-attachment: fixed;
+  transition: background 240ms ease;
 }
 
 h1,
