@@ -1,13 +1,40 @@
+# Blueprint Render — backend nav-starter
+# Déploiement : https://render.com/deploy?repo=https://github.com/El-hadj10/nav-starter
+#
+# Note : le plan free ne supporte pas de disque persistant — la base SQLite
+# est ré-initialisée (re-seedée) après chaque redéploiement/redémarrage.
+# Pour la production, passe en plan payant + disque persistant monté sur backend/data.
+
 services:
   - type: web
     name: nav-starter-backend
-    env: node
+    runtime: node
     plan: free
     buildCommand: npm install
     startCommand: npm run backend:start
     healthCheckPath: /health
     envVars:
+      # node:sqlite requiert Node >= 22
+      - key: NODE_VERSION
+        value: "22"
+      # Token Mapbox utilisé côté serveur (proxy geocoding/directions)
       - key: MAPBOX_TOKEN
         sync: false
+      # Secret JWT généré automatiquement par Render
+      - key: JWT_SECRET
+        generateValue: true
+      # Comptes de démonstration (modifiables dans le dashboard Render)
+      - key: DEMO_USER_EMAIL
+        value: demo@navstarter.dev
+      - key: DEMO_USER_PASSWORD
+        value: NavStarter123!
+      - key: ADMIN_EMAIL
+        value: admin@navstarter.dev
+      - key: ADMIN_PASSWORD
+        value: AdminStarter123!
+      # Origines autorisées (site Pages + dev local)
       - key: ALLOWED_ORIGINS
-        value: https://el-hadj10.github.io
+        value: https://el-hadj10.github.io,http://localhost:5173
+      # Durées de vie des signalements (optionnel — décommenter pour personnaliser)
+      # - key: REPORT_TTL_JSON
+      #   value: {"roadworks":720,"road_closed":360,"camera":120,"slowdown":90,"accident":120,"hazard":240}
