@@ -25,14 +25,14 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
   .map((origin) => origin.trim())
   .filter(Boolean)
 
-// Middleware CORS simple (GET/OPTIONS)
+// Middleware CORS simple (GET/POST/PUT/DELETE/OPTIONS)
 function setCorsHeaders(req, res) {
   const requestOrigin = req.headers.origin
   if (!requestOrigin) return
   if (allowedOrigins.length === 0 || allowedOrigins.includes(requestOrigin)) {
     res.setHeader('Access-Control-Allow-Origin', requestOrigin)
     res.setHeader('Vary', 'Origin')
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization')
   }
 }
