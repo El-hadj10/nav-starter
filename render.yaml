@@ -10,6 +10,7 @@ services:
     name: nav-starter-backend
     runtime: node
     plan: free
+    autoDeploy: true
     buildCommand: npm install
     startCommand: npm run backend:start
     healthCheckPath: /health
