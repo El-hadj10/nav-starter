@@ -45,6 +45,12 @@ Perfect for building:
 
 ## ⚡ Quick Start
 
+**Try the live demo first** — the full stack runs online (frontend + API + SQLite):
+
+👉 https://el-hadj10.github.io/nav-starter/
+
+Demo accounts: `demo@navstarter.dev` / `NavStarter123!` — admin dashboard: `admin@navstarter.dev` / `AdminStarter123!`
+
 **One-liner (Linux/macOS)** — installs, starts backend + frontend, opens the browser:
 
 ```bash

@@ -22,9 +22,13 @@
 
 Application mobile de navigation installable (PWA) — recherche de destinations, routage via Mapbox, favoris persistants et support hors-ligne.
 
+**Démo full-stack en ligne** (frontend + API + SQLite) : https://el-hadj10.github.io/nav-starter/
+
 ### EN
 
 Installable mobile navigation PWA — destination search, Mapbox-powered routing, persistent favorites and offline support.
+
+**Full-stack live demo** (frontend + API + SQLite): https://el-hadj10.github.io/nav-starter/
 
 ## Fonctionnalites
 
